@@ -64,17 +64,19 @@ class Input
   end
 
   def draw_override(ffi)
-    @cursor_x, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)
+    cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)[0].ceil
 
     @source_w = @text_width < @w ? @text_width : @w
     if @source_w < @w
       @source_x = 0
     else
-      relative_cursor_x = @cursor_x - @source_x
+      relative_cursor_x = cursor_x - @source_x
       if relative_cursor_x <= 0
         @source_x = relative_cursor_x.greater(0)
       elsif relative_cursor_x > @w
-        @source_x = (relative_cursor_x - @w).lesser(@text_width - @w)
+# - 000006 [Game] source_x: 2 source_w: 394 relative_cursor_x: 396 cursor_x: 416 text_width: 416
+# - 000006 [Game] source_x: 20 source_w: 394 relative_cursor_x: 414 cursor_x: 416 text_width: 416
+        @source_x = (cursor_x - @w).lesser(@text_width - @w)
       end
     end
 
@@ -102,7 +104,7 @@ class Input
             else
               255
             end
-    ffi.draw_solid(@x + @cursor_x - @source_x, @y, @padding, @h + @padding * 2, 0, 0, 0, alpha)
+    ffi.draw_solid(@x + cursor_x - @source_x, @y, @padding, @h + @padding * 2, 0, 0, 0, alpha)
   end
 
   META_KEYS = %i[meta_left meta_right] # and `meta`
@@ -300,7 +302,7 @@ class Input
   def prepare_render_target
     # TODO: measure so we fit in the rect
     # TODO: render onto a render_target, so we can fully render the string and fit it in the rect
-    @text_width = $gtk.calcstringbox(@value, @size_enum, @font.to_s)[0]
+    @text_width = $gtk.calcstringbox(@value, @size_enum, @font.to_s)[0].ceil
     rt = $args.outputs[@path]
     rt.w = @text_width
     rt.h = @h
