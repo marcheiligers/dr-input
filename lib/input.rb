@@ -71,7 +71,6 @@ class Input
       @source_x = 0
     else
       relative_cursor_x = @cursor_x - @source_x
-putz "source_x: #{@source_x} source_w: #{@source_w} relative_cursor_x: #{relative_cursor_x} cursor_x: #{@cursor_x}"
       if relative_cursor_x <= 0
         @source_x = relative_cursor_x.greater(0)
       elsif relative_cursor_x > @w

@@ -1,7 +1,7 @@
 require 'lib/input.rb'
 
 def tick(args)
-  args.state.text_box ||= Input.new(x: 100, y: 600, w: 394, value: 'default value i put here just because i could')
+  args.state.text_box ||= Input.new(x: 100, y: 600, w: 394, value: 'default value i put here just because i could, nanananana')
 
   args.state.text_box.tick
   args.outputs.primitives << [
