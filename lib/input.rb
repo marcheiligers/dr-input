@@ -72,10 +72,8 @@ class Input
     else
       relative_cursor_x = cursor_x - @source_x
       if relative_cursor_x <= 0
-        @source_x = relative_cursor_x.greater(0)
+        @source_x = cursor_x.greater(0)
       elsif relative_cursor_x > @w
-# - 000006 [Game] source_x: 2 source_w: 394 relative_cursor_x: 396 cursor_x: 416 text_width: 416
-# - 000006 [Game] source_x: 20 source_w: 394 relative_cursor_x: 414 cursor_x: 416 text_width: 416
         @source_x = (cursor_x - @w).lesser(@text_width - @w)
       end
     end
@@ -105,6 +103,10 @@ class Input
               255
             end
     ffi.draw_solid(@x + cursor_x - @source_x, @y, @padding, @h + @padding * 2, 0, 0, 0, alpha)
+
+# str = "source_x: #{@source_x} source_w: #{@source_w} relative_cursor_x: #{relative_cursor_x} cursor_x: #{cursor_x} text_width: #{@text_width}"
+# putz str
+# ffi.draw_label(100, 300, str, 0, 0, 0, 0, 0, 255, '')
   end
 
   META_KEYS = %i[meta_left meta_right] # and `meta`
