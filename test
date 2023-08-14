@@ -1,0 +1,3 @@
+cd ..
+./dragonruby dr-inputp --test tests/tests.rb --no-tick
+cd -
