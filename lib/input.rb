@@ -1,6 +1,7 @@
+# Initially based loosely on code from Zif
 class Input
   attr_sprite
-  attr_reader :value
+  attr_reader :value, :clipboard
 
   SIZE_ENUM = {
     small: -1,
@@ -26,7 +27,7 @@ class Input
     @padding = params[:padding] || 2
 
     @w = params[:w] || 256
-    @h = params[:h] || @font_height + @padding
+    @h = params[:h] || @font_height + @padding * 2
 
     @text_color = {
       r: params[:r] || 0,
@@ -56,11 +57,15 @@ class Input
     @key_repeat_debounce = params[:key_repeat_debounce] = 5
     @key_repeat_ticks = 0
 
+    # Mouse focus for seletion
     @mouse_down = false
 
+    # Render target for text scrolling
     @path = "__input_#{@@id += 1}"
-
     @source_x = 0
+
+    # TODO: make clipboard global for if there's more than one input (0)
+    @clipboard = nil
   end
 
   def draw_override(ffi)
@@ -90,6 +95,7 @@ class Input
     )
 
     # CURSOR
+    # TODO: Cursor renders outside of the bounds of the control
     @cursor_ticks += @cursor_dir
     alpha = if @cursor_ticks == CURSOR_FULL_TICKS
               @cursor_dir = -1
@@ -115,8 +121,6 @@ class Input
   CTRL_KEYS = %i[control_left control_right]
   DEL_KEYS = %i[delete backspace]
 
-  # TODO: key-repeat
-  # Based loosely on code from Zif
   def tick
     prepare_special_keys
     handle_keyboard
@@ -141,10 +145,33 @@ class Input
     text_keys = $args.inputs.text
 
     if @meta || @ctrl
-      # TODO: cut/copy/paste/undo/redo
+      # TODO: undo/redo
       if @down_keys.include?(:a)
         @selection_start = 0
         @selection_end = @value.length
+      end
+
+      if @down_keys.include?(:c) && @selection_start != @selection_end
+        @clipboard = if @selection_start < @selection_end
+                       @value.slice(@selection_start, @selection_end - @selection_start)
+                     else
+                       @value.slice(@selection_end, @selection_start - @selection_end)
+                     end
+      end
+
+      if @down_keys.include?(:x) && @selection_start != @selection_end
+        @clipboard = if @selection_start < @selection_end
+                       @value.slice(@selection_start, @selection_end - @selection_start)
+                     else
+                       @value.slice(@selection_end, @selection_start - @selection_end)
+                     end
+        @value = @value.slice(0, @selection_start.lesser(@selection_end)) + @value.slice(@selection_end.greater(@selection_start), @value.length)
+        @selection_start = @selection_end = @selection_start.lesser(@selection_end)
+      end
+
+      if @down_keys.include?(:v)
+        @value = @value.slice(0, @selection_start.lesser(@selection_end)) + @clipboard + @value.slice(@selection_end.greater(@selection_start), @value.length)
+        @selection_start = @selection_end = @selection_start.lesser(@selection_end) + @clipboard.length
       end
 
       if @down_keys.include?(:left)
@@ -215,6 +242,7 @@ class Input
         end
       end
     else
+      # BUG: Something is wrong with inserting at the end
       text_keys.each do |key|
         if @selection_start == @selection_end
           @value = @value.slice(0, @selection_start).to_s + key + @value.slice(@selection_start, @value.length).to_s
@@ -232,7 +260,6 @@ class Input
   end
 
   # TODO: Word selection (double click), All selection (triple click)
-  # TODO: Update for scrolled text
   def handle_mouse
     mouse = $args.inputs.mouse
 
@@ -252,6 +279,7 @@ class Input
   end
 
   # BUG: Single character words are busted
+  # TODO: Improve walking words
   def find_word_break_left
     return 0 if @selection_end == 0
 
@@ -302,8 +330,7 @@ class Input
   end
 
   def prepare_render_target
-    # TODO: measure so we fit in the rect
-    # TODO: render onto a render_target, so we can fully render the string and fit it in the rect
+    # TODO: handle padding correctly
     @text_width = $gtk.calcstringbox(@value, @size_enum, @font.to_s)[0].ceil
     rt = $args.outputs[@path]
     rt.w = @text_width

@@ -1,0 +1,11 @@
+Style/ClassVars:
+  Enabled: false
+
+Style/GlobalVars:
+  AllowedVariables:
+    - $gtk
+    - $args
+    - $state
+
+Style/NumericPredicate:
+  EnforcedStyle: comparison

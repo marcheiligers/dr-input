@@ -11,4 +11,5 @@ def tick(args)
   ]
 
   args.outputs.primitives << { x: 100, y: 100, text: "Value: #{args.state.text_box.value}", r: 255 }.label!
+  args.outputs.primitives << { x: 100, y: 80, text: "Clipboard: #{args.state.text_box.clipboard}", r: 255 }.label!
 end
