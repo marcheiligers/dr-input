@@ -66,55 +66,71 @@ class Input
 
     # TODO: make clipboard global for if there's more than one input (0)
     @clipboard = nil
+
+    @word_wrap = params[:word_wrap] || false
   end
 
   def draw_override(ffi)
-    cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)[0].ceil
+    if @word_wrap
+      ffi.draw_sprite_3(
+        @x, @y, @w, @h,
+        @path,
+        0,
+        255, 255, 255, 255,
+        nil, nil, nil, nil,
+        false, false,
+        0, 0,
+        0, 0, @w, @h
+      )
 
-    @source_w = @text_width < @w ? @text_width : @w
-    if @source_w < @w
-      @source_x = 0
+      # TODO: cursor for wrap-text
     else
-      relative_cursor_x = cursor_x - @source_x
-      if relative_cursor_x <= 0
-        @source_x = cursor_x.greater(0)
-      elsif relative_cursor_x > @w
-        @source_x = (cursor_x - @w).lesser(@text_width - @w)
+      cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)[0].ceil
+
+      @source_w = @text_width < @w ? @text_width : @w
+      if @source_w < @w
+        @source_x = 0
+      else
+        relative_cursor_x = cursor_x - @source_x
+        if relative_cursor_x <= 0
+          @source_x = cursor_x.greater(0)
+        elsif relative_cursor_x > @w
+          @source_x = (cursor_x - @w).lesser(@text_width - @w)
+        end
       end
-    end
 
-    ffi.draw_sprite_3(
-      @x, @y, @source_w, @h,
-      @path,
-      0,
-      255, 255, 255, 255,
-      nil, nil, nil, nil,
-      false, false,
-      0, 0,
-      @source_x, 0, @source_w, @h
-    )
+      ffi.draw_sprite_3(
+        @x, @y, @source_w, @h,
+        @path,
+        0,
+        255, 255, 255, 255,
+        nil, nil, nil, nil,
+        false, false,
+        0, 0,
+        @source_x, 0, @source_w, @h
+      )
 
-    # CURSOR
-    # TODO: Cursor renders outside of the bounds of the control
-    @cursor_ticks += @cursor_dir
-    alpha = if @cursor_ticks == CURSOR_FULL_TICKS
-              @cursor_dir = -1
-              255
-            elsif @cursor_ticks == 0
-              @cursor_dir = 1
-              0
-            elsif @cursor_ticks < CURSOR_FULL_TICKS
-              $args.easing.ease(0, @cursor_ticks, CURSOR_FLASH_TICKS, :quad) * 255
-            else
-              255
-            end
-    ffi.draw_solid(@x + cursor_x - @source_x, @y, @padding, @h + @padding * 2, 0, 0, 0, alpha)
+      # CURSOR
+      # TODO: Cursor renders outside of the bounds of the control
+      @cursor_ticks += @cursor_dir
+      alpha = if @cursor_ticks == CURSOR_FULL_TICKS
+                @cursor_dir = -1
+                255
+              elsif @cursor_ticks == 0
+                @cursor_dir = 1
+                0
+              elsif @cursor_ticks < CURSOR_FULL_TICKS
+                $args.easing.ease(0, @cursor_ticks, CURSOR_FLASH_TICKS, :quad) * 255
+              else
+                255
+              end
+      ffi.draw_solid(@x + cursor_x - @source_x, @y, @padding, @h + @padding * 2, 0, 0, 0, alpha)
 
 # str = "source_x: #{@source_x} source_w: #{@source_w} relative_cursor_x: #{relative_cursor_x} cursor_x: #{cursor_x} text_width: #{@text_width}"
 # putz str
 # ffi.draw_label(100, 300, str, 0, 0, 0, 0, 0, 255, '')
+    end
   end
-
   META_KEYS = %i[meta_left meta_right] # and `meta`
   SHIFT_KEYS = %i[shift_left shift_right]
   ALT_KEYS = %i[alt_left alt_right]
@@ -298,11 +314,10 @@ class Input
     end
   end
 
-  def find_word_break_right
+  def find_word_break_right(index = @selection_end)
     length = @value.length
-    return length if @selection_end == length
+    return length if index == length
 
-    index = @selection_end
     found_word_char = false
     while !found_word_char
       index += 1
@@ -330,27 +345,60 @@ class Input
   end
 
   def prepare_render_target
-    # TODO: handle padding correctly
-    @text_width = $gtk.calcstringbox(@value, @size_enum, @font.to_s)[0].ceil
-    rt = $args.outputs[@path]
-    rt.w = @text_width
-    rt.h = @h
-    rt.transient!
+    if @word_wrap
+      # calculate lines
+      lines = []
+      index = 0
+      prev_index = 0
+      prev_line_index = 0
+      while (index = find_word_break_right(index)) < @value.length
+        # TODO: handle case where a single word is wider than the field (gotta break it somewhere)
+        width, = $gtk.calcstringbox(@value[prev_line_index, index].to_s, @size_enum, @font.to_s)
+        if width > @w
+          lines << @value.slice(prev_line_index, prev_index)
+          prev_line_index = prev_index
+        end
+        prev_index = index
+      end
+      lines << @value.slice(prev_line_index, prev_index)
 
-    # SELECTION
-    if @selection_start != @selection_end
-      if @selection_start < @selection_end
-        left, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font.to_s)
-        right, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)
-      elsif @selection_start > @selection_end
-        left, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)
-        right, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font.to_s)
+      @h = lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
+      rt = $args.outputs[@path]
+      rt.w = @w
+      rt.h = @h
+      rt.transient!
+
+      puts lines
+      puts @h
+
+      # TODO: Multi-line selection
+      lines.each_with_index do |line, i|
+        puts "#{@h - @padding - i * @font_height}: #{line}"
+        rt.primitives << { x: 0, y: @h - @padding - i * @font_height, text: line, size_enum: @size_enum, font: @font.to_s }.label!(@text_color)
+      end
+    else
+      # TODO: handle padding correctly
+      @text_width = $gtk.calcstringbox(@value, @size_enum, @font.to_s)[0].ceil
+      rt = $args.outputs[@path]
+      rt.w = @text_width
+      rt.h = @h
+      rt.transient!
+
+      # SELECTION
+      if @selection_start != @selection_end
+        if @selection_start < @selection_end
+          left, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font.to_s)
+          right, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)
+        elsif @selection_start > @selection_end
+          left, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font.to_s)
+          right, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font.to_s)
+        end
+
+        rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
       end
 
-      rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
+      # TEXT
+      rt.primitives << { x: 0, y: @h - @padding, text: @value, size_enum: @size_enum, font: @font.to_s }.label!(@text_color)
     end
-
-    # TEXT
-    rt.primitives << { x: 0, y: @h - @padding, text: @value, size_enum: @size_enum, font: @font.to_s }.label!(@text_color)
   end
 end
