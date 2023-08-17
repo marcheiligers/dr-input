@@ -23,6 +23,9 @@ class Input
 
     @word_chars = params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']
     _, @font_height = $gtk.calcstringbox(@word_chars.join(''), @size_enum, @font.to_s)
+    @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
+    @crnl_chars = ["\r", "\n"]
+    @word_wrap_chars = @word_chars + @punctuation_chars
 
     @padding = params[:padding] || 2
 
@@ -330,6 +333,66 @@ class Input
       return length if index == length
       return index unless @word_chars.include?(@value[index, 1])
     end
+  end
+
+  def word_breaks(value = @value)
+    # @word_chars = params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']
+    # _, @font_height = $gtk.calcstringbox(@word_chars.join(''), @size_enum, @font.to_s)
+    # @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
+    # @crnl_chars = ["\r", "\n"]
+    # @word_wrap_chars = @word_chars + @punctuation_chars
+    words = []
+    word = ''
+    index = -1
+    length = value.length
+    mode = :leading_white_space
+
+    while (index += 1) < length # mode = find a word-like thing
+      case mode
+      when :leading_white_space
+        if value[index].strip == '' # leading white-space
+          if @crnl_chars.include?(value[index])
+            word << "\n"
+            words << word
+            word = ''
+          else
+            word << value[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
+          end
+        else
+          word << value[index]
+          mode = :word_wrap_chars
+        end
+      when :word_wrap_chars # TODO: consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
+        if @word_wrap_chars.include?(value[index])
+          word << value[index]
+        elsif @crnl_chars.include?(value[index])
+          word << "\n"
+          words << word
+          word = ''
+          mode = :leading_white_space
+        else
+          word << value[index]
+          mode = :trailing_white_space
+        end
+      when :trailing_white_space
+        if value[index].strip == '' # trailing white-space
+          if @crnl_chars.include?(value[index])
+            word << "\n" # converting all new line chars to \n
+            words << word
+            word = ''
+            mode = :leading_white_space
+          else
+            word << value[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
+          end
+        else
+          words << word
+          word = value[index]
+          mode = :word_wrap_chars
+        end
+      end
+    end
+
+    words << word
   end
 
   def find_index_at_x(x)
