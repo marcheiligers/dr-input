@@ -1,3 +1,11 @@
+# v0.0.3 - 20 August 2023
+
+* Word-wrap option and smart word breaks algorithm, with some tests
+* Cursor for wrapping text
+* Text selection for wrapping text, including multi-line selection
+* Fixed: Something is wrong with inserting at the end
+* Fixed: Rendering issue when deleting from non-wrapping field
+
 # v0.0.2 - 14 August 2023
 
 * Add cut, copy, paste
@@ -22,15 +30,18 @@
 
 # Known Issues and TODO
 
-## BUG (2)
-1. lib/input.rb:240   Something is wrong with inserting at the end
-2. lib/input.rb:276   Single character words are busted
+## BUG (1)
+1. lib/input.rb:288   Single character words are busted
 
-## TODO (7)
-1. lib/input.rb:67    make clipboard global for if there's more than one input (0)
-2. lib/input.rb:55    implement key repeat for cursor movement
-3. lib/input.rb:98    Cursor renders outside of the bounds of the control
-4. lib/input.rb:148   undo/redo
-5. lib/input.rb:257   Word selection (double click), All selection (triple click)
-6. lib/input.rb:277   Improve walking words
-7. lib/input.rb:328   handle padding correctly
+## TODO (11)
+1. lib/input.rb:61    implement key repeat for cursor movement
+2. lib/input.rb:106   Cursor renders outside of the bounds of the control
+3. lib/input.rb:152   undo/redo
+4. lib/input.rb:269   Word selection (double click), All selection (triple click)
+5. lib/input.rb:289   Improve walking words
+6. lib/input.rb:342   prolly need to replace \r\n with \n up front
+7. lib/input.rb:346   consider how to render TAB, maybe convert TAB into 4 spaces?
+8. lib/input.rb:352   consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
+9. lib/input.rb:370   consider how to render TAB, maybe convert TAB into 4 spaces?
+10. lib/input.rb:430  Implement line spacing
+11. lib/input.rb:498  handle padding correctly
