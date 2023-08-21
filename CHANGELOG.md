@@ -1,3 +1,10 @@
+# v0.0.4 - X August 2023
+
+* Added a background color property.
+  * Having a background improves the rendering quality.
+* Added some usage notes to the README.md
+* Fixed: Inserting multiple characters (paste, or multiple characters) in a single tick
+
 # v0.0.3 - 20 August 2023
 
 * Word-wrap option and smart word breaks algorithm, with some tests

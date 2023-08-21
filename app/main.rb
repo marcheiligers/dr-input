@@ -1,8 +1,9 @@
 require 'lib/input.rb'
 
+FONT = '' # 'fonts/Victorian Parlor_By Burntilldead_Free/Victorian Parlor Vintage Alternate_free.ttf'
 def tick(args)
-  args.state.no_wrap ||= Input.new(x: 100, y: 600, w: 394, value: 'this is a non-wrapping input field')
-  args.state.wrapping ||= Input.new(x: 600, y: 626, w: 394, value: 'this is a wrapping (multiline) input field', word_wrap: true)
+  args.state.no_wrap ||= Input.new(x: 100, y: 600, w: 394, value: 'this is a non-wrapping input field', font: FONT, size_enum: :xxxlarge)
+  args.state.wrapping ||= Input.new(x: 600, y: 626, w: 394, value: 'this is a wrapping (multiline) input field', word_wrap: true, font: FONT, size_enum: :xxxlarge)
 
   args.state.no_wrap.tick
   args.state.wrapping.tick

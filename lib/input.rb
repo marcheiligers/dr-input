@@ -8,7 +8,10 @@ class Input
   SIZE_ENUM = {
     small: -1,
     normal: 0,
-    large: 1
+    large: 1,
+    xlarge: 2,
+    xxlarge: 3,
+    xxxlarge: 4
   }.freeze
 
   CURSOR_FULL_TICKS = 30
@@ -41,6 +44,7 @@ class Input
       a: params[:a] || 255,
       vertical_alignment_enum: 0
     }
+    @background_color = params[:background_color]
 
     @value = params[:value] || ''
 
@@ -61,7 +65,6 @@ class Input
     # TODO: implement key repeat for cursor movement
     @key_repeat_delay = params[:key_repeat_delay] = 20
     @key_repeat_debounce = params[:key_repeat_debounce] = 5
-    @key_repeat_ticks = 0
 
     # Mouse focus for seletion
     @mouse_down = false
@@ -255,13 +258,13 @@ class Input
   def insert(str)
     if @selection_start == @selection_end
       @value = @value.slice(0, @selection_start).to_s + str + @value.slice(@selection_start, @value.length).to_s
-      @selection_start += 1
+      @selection_start += str.length
     elsif @selection_start < @selection_end
       @value = @value.slice(0, @selection_start).to_s + str + @value.slice(@selection_end, @value.length).to_s
-      @selection_start += 1
+      @selection_start += str.length
     elsif @selection_start > @selection_end
       @value = @value.slice(0, @selection_end).to_s + str + @value.slice(@selection_start, @value.length).to_s
-      @selection_start = @selection_end + 1
+      @selection_start = @selection_end + str.length
     end
     @selection_end = @selection_start
   end
@@ -431,6 +434,8 @@ class Input
       rt = $args.outputs[@path]
       rt.w = @w
       rt.h = @h
+      rt.background_color = @background_color
+      # TODO: implement sprite background
       rt.transient!
 
       putz @value.gsub("\n", '\n')
@@ -500,6 +505,8 @@ class Input
       rt = $args.outputs[@path]
       rt.w = @text_width
       rt.h = @h
+      rt.background_color = @background_color
+      # TODO: implement sprite background
       rt.transient!
 
       # SELECTION
