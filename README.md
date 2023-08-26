@@ -50,6 +50,9 @@ end
 * `key_repeat_delay` - delay before function key combinations (cursor, cut/copy/paste and so on) begin to repeat in ticks (Integer), default 20
 * `key_repeat_debounce` - number of ticks (Integer) between function key repeat, default 5
 * `word_wrap` - if the control should wrap (Boolean), default false
+* `focussed` - initial input focus (Boolean), default false
+* `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
+* `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
 
 ## Notes
 

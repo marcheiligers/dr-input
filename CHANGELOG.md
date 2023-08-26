@@ -4,6 +4,12 @@
   * Having a background improves the rendering quality.
 * Added some usage notes to the README.md
 * Fixed: Inserting multiple characters (paste, or multiple characters) in a single tick
+* Implement key repeat for cursor movement
+* Fixed: At some point walking single character words was fixed
+* Added focus state, `#focussed?`, `#focus!`, `#blur!`
+* Added `on_clicked` and `on_unhandled_key` callbacks
+* Added mouse selection for word wrapped control
+* Added up and down (without `[alt]`) for word wrapped control
 
 # v0.0.3 - 20 August 2023
 
