@@ -23,12 +23,13 @@ class Input
 
   NOOP = -> {}
 
-  META_KEYS = %i[meta_left meta_right] # and `meta`
-  SHIFT_KEYS = %i[shift_left shift_right]
-  ALT_KEYS = %i[alt_left alt_right]
-  CTRL_KEYS = %i[control_left control_right]
+  # BUG: Modifier keys are broken on the web
+  META_KEYS = %i[meta_left meta_right meya]
+  SHIFT_KEYS = %i[shift_left shift_right shift]
+  ALT_KEYS = %i[alt_left alt_right alt]
+  CTRL_KEYS = %i[control_left control_right control]
   DEL_KEYS = %i[delete backspace]
-  IGNORE_KEYS = %i[raw_key char meta shift alt control] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS
+  IGNORE_KEYS = %i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS
 
   @@id = 0
 

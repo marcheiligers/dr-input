@@ -1,0 +1,19 @@
+log.filter_subsystems=HTTPServer
+
+# Should use the whole display
+# equivalent to calling $gtk.set_window_fullscreen(true)
+# Note: If you use this flag, you must provide a way to
+#       exit full sceen mode from your game and wire it up
+#       to $gtk.set_window_fullscreen(false)
+# renderer.fullscreen=true
+
+# Milliseconds to sleep per frame when the game is in
+# the background (zero to disable)
+# renderer.background_sleep=0
+
+# Set the window as borderless.
+# Note: the ablity to quit the application via OS shortcuts will not
+#       work if this value is true and you must provide a means to exit the
+#       game and wire it up to $gtk.request_quit
+#       OS Shortcuts for quitting such as ALT+F4 and CMD+Q will still work.
+# renderer.borderless=true

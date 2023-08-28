@@ -1,0 +1,4 @@
+rm game_state*.txt
+cd ..
+./dragonruby-publish dr-input
+cd -

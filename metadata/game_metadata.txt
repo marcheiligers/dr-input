@@ -14,13 +14,13 @@ scale_quality=2
 # === Flags available in DragonRuby Game Toolkit Pro ====
 
 # Uncomment the entry below to bytecode compile your Ruby code
-# compile_ruby=false
+# compile_ruby=true
 
 # Uncomment the entry below to specify the package name for your APK
 # packageid=org.dev.gamename
 
 # Setting this property to true will enable High DPI rendering (try in combination with scale_quality to see what looks best)
-highdpi=true
+# highdpi=false
 
 # === Portrait Mode ===
 # The orientation can be set to either landscape (1280x720) or portrait (720x1280)
@@ -31,7 +31,7 @@ highdpi=true
 # HD Mode: when enabled, will give you 720p, 1080p, 1440p, 4k, and 5k rendering options
 # Check out the following YouTube Video for a demo of DragonRuby's HD Capabilities
 # https://youtu.be/Rnc6z84zaa4
-# hd=true
+# hd=false
 
 # === Texture Atlases ===
 
