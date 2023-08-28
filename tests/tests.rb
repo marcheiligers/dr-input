@@ -16,6 +16,12 @@ def test_calcstringbox_double_new_line_has_no_width(_args, assert)
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
+def test_calcstringbox_with_day_roman_new_line_has_width(_args, assert)
+  w, h = $gtk.calcstringbox("\n\n", 0, 'fonts/day-roman/DAYROM__.ttf')
+  assert.false! w == 0.0 # :/
+  assert.false! h == 0.0 # :/
+end
+
 def test_calcstringbox_tab_has_no_witdh(_args, assert)
   w, h = $gtk.calcstringbox("\t", 0, '')
   assert.equal! w, 0.0 # Yep, it has no width :/
@@ -63,11 +69,11 @@ def test_find_word_breaks_trailing_new_line(_args, assert)
 end
 
 def test_perform_word_wrap_multiple_new_lines(_args, assert)
-  assert.equal! Input.new.perform_word_wrap(['1', "\n", "\n", "\n2"]), ['1', "\n", "\n", "\n2"]
+  assert.equal! Input.new.perform_word_wrap(['1', "\n", "\n", "\n2"]).map(&:text), ['1', "\n", "\n", "\n2"]
 end
 
 def test_perform_word_wrap_trailing_new_line(_args, assert)
-  assert.equal! Input.new.perform_word_wrap(['1', "\n"]), ['1', "\n"]
+  assert.equal! Input.new.perform_word_wrap(['1', "\n"]).map(&:text), ['1', "\n"]
 end
 
 def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
@@ -75,7 +81,7 @@ def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
 end
 
 def test_perform_word_wrap_trailing_new_line_after_wrap(_args, assert)
-  assert.equal! Input.new.perform_word_wrap(['1234567890 ', '1234567890 ', '1234567890', "\n"]), ['1234567890 1234567890 ', '1234567890', "\n"]
+  assert.equal! Input.new.perform_word_wrap(['1234567890 ', '1234567890 ', '1234567890', "\n"]).map(&:text), ['1234567890 1234567890 ', '1234567890', "\n"]
 end
 
 def test_find_word_breaks_trailing_new_line_after_wrap_with_space(_args, assert)

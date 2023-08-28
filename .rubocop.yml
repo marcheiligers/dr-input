@@ -6,6 +6,23 @@ Style/GlobalVars:
     - $gtk
     - $args
     - $state
+    - $clipboard
 
 Style/NumericPredicate:
   EnforcedStyle: comparison
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - x
+    - 'y'
+    - w
+    - h
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/RedundantFileExtensionInRequire:
+  Enabled: false
