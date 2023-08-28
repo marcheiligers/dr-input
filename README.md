@@ -54,6 +54,20 @@ end
 * `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
 * `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
 
+### Instance Methods
+
+* `#insert(text)` - Inserts text at the cursor location, or replaces if there's a selection
+* `#focus!` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
+* `#blur!` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
+
+
 ## Notes
 
 * Adding a `background_color` significantly improves the rendering of the text.
+
+## Thanks
+
+* @danhealy for Zif. The Zif Input was the starting point for this. Though you wouldn't be able to tell now, it was a really solid place to start.
+* @leviondiscord (on Discord, aka @leviongithub) for suggesting `#delete_prefix` when I would have done something much dumber. And also providing other interesting methods I'm likely to use at some point
+* @DarkGriffin (on Discord) for requesting this control in the first place, and not being shy about the _crazy_ desired feature list (of which, I feel like, I've only touched the surface).
+* @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
