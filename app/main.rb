@@ -17,13 +17,13 @@ def tick(args)
       background_color: [200, 200, 200],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
-          input.blur!
-          args.state.wrapping.focus!
+          input.blur
+          args.state.wrapping.focus
         end
       end,
       on_clicked: lambda do |_mouse, input|
-        input.focus!
-        args.state.wrapping.blur!
+        input.focus
+        args.state.wrapping.blur
       end
     )
     args.state.wrapping ||= Input::Multiline.new(
@@ -36,16 +36,16 @@ def tick(args)
       background_color: [200, 200, 200],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
-          input.blur!
-          args.state.no_wrap.focus!
+          input.blur
+          args.state.no_wrap.focus
         end
       end,
       on_clicked: lambda do |_mouse, input|
-        input.focus!
-        args.state.no_wrap.blur!
+        input.focus
+        args.state.no_wrap.blur
       end
     )
-    args.state.no_wrap.focus!
+    args.state.no_wrap.focus
   end
 
   args.state.no_wrap.tick

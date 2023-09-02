@@ -1,5 +1,7 @@
 module Input
   class Multiline < Base
+    attr_reader :lines
+
     def initialize(**params)
       super
 
@@ -17,8 +19,7 @@ module Input
       if @meta || @ctrl
         # TODO: undo/redo
         if @down_keys.include?(:a)
-          @selection_start = 0
-          @selection_end = @value.length
+          select_all
         elsif @down_keys.include?(:c) && @selection_start != @selection_end
           copy
         elsif @down_keys.include?(:x) && @selection_start != @selection_end
@@ -26,108 +27,41 @@ module Input
         elsif @down_keys.include?(:v)
           paste
         elsif @down_keys.include?(:left)
-          line = @lines.line_at(@selection_end)
-          index = line.new_line? ? line.start + 1 : line.start
-          if @shift
-            @selection_end = index
-          else
-            @selection_start = @selection_end = index
-          end
+          @shift ? select_to_line_start : move_to_line_start
         elsif @down_keys.include?(:right)
-          line = @lines.line_at(@selection_end)
-          if line.wrapped?
-            if @selection_end == line.end
-              if @lines.length > line.number
-                line = @lines[line.number + 1]
-                index = line.wrapped? ? line.end - 1 : line.end
-              else
-                index = line.end
-              end
-            else
-              index = line.end - 1
-            end
-          else
-            index = line.end
-          end
-          if @shift
-            @selection_end = index
-          else
-            @selection_start = @selection_end = index
-          end
+          @shift ? select_to_line_end : move_to_line_end
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
-          if @selection_start == @selection_end
-            @value = @value.slice(0, @selection_start - 1).to_s + @value.slice(@selection_start, @value.length).to_s
-            @selection_start = (@selection_start - 1).greater(0)
-            @selection_end = @selection_start
-          elsif @selection_start < @selection_end
-            @value = @value.slice(0, @selection_start).to_s + @value.slice(@selection_end, @value.length).to_s
-            @selection_end = @selection_start
-          else
-            @value = @value.slice(0, @selection_end).to_s + @value.slice(@selection_start, @value.length).to_s
-            @selection_start = @selection_end
-          end
+          delete_back
         elsif @down_keys.include?(:left)
           if @shift
-            @selection_end = @alt ? find_word_break_left : (@selection_end - 1).greater(0)
+            @alt ? select_word_left : select_char_left
           else
-            @selection_start = if @alt
-                                 find_word_break_left
-                               elsif @selection_end > @selection_start
-                                 @selection_start
-                               elsif @selection_end < @selection_start
-                                 @selection_end
-                               else
-                                 (@selection_start - 1).greater(0)
-                               end
-            @selection_end = @selection_start
+            @alt ? move_word_left : move_char_left
           end
         elsif @down_keys.include?(:right)
           if @shift
-            @selection_end = @alt ? find_word_break_right : (@selection_end + 1).lesser(@value.length)
+            @alt ? select_word_right : select_char_right
           else
-            @selection_start = if @alt
-                                 find_word_break_right
-                               elsif @selection_end > @selection_start
-                                 @selection_end
-                               elsif @selection_end < @selection_start
-                                 @selection_start
-                               else
-                                 (@selection_start + 1).lesser(@value.length)
-                               end
-            @selection_end = @selection_start
+            @alt ? move_word_right : move_char_right
           end
         # TODO: Retain a original_cursor_x when moving up/down to try stay generally in the same x range
         elsif @down_keys.include?(:up)
-          # BUG: up from the first row is going to 0???
           if @shift
-            line = @lines.line_at(@selection_end)
-            @selection_end = line.number == 0 ? 0 : @lines[line.number - 1].index_at(@cursor_x - @x + @source_x)
+            select_line_up
           else
-            @selection_start = if @alt
-                                 # TODO: beginning of previous paragraph
-                               else
-                                 line = @lines.line_at(@selection_end)
-                                 line.number == 0 ? 0 : @lines[line.number - 1].index_at(@cursor_x - @x + @source_x)
-                               end
-            @selection_end = @selection_start
+            # TODO: beginning of previous paragraph with alt
+            move_line_up
           end
         elsif @down_keys.include?(:down)
-          # BUG: down from the first row isn't working???
           if @shift
-            line = @lines.line_at(@selection_end)
-            @selection_end = line.number == @lines.length - 1 ? @value.length : @lines[line.number + 1].index_at(@cursor_x - @x + @source_x)
+            select_line_down
           else
-            @selection_start = if @alt
-                                 # TODO: end of next paragraph
-                               else
-                                 line = @lines.line_at(@selection_end)
-                                 line.number == @lines.length - 1 ? @value.length : @lines[line.number + 1].index_at(@cursor_x - @x + @source_x)
-                               end
-            @selection_end = @selection_start
+            # TODO: end of next paragraph with alt
+            move_line_down
           end
         elsif @down_keys.include?(:enter)
           insert("\n")
@@ -136,6 +70,95 @@ module Input
         end
       else
         insert(text_keys.join(''))
+      end
+    end
+
+    def select_to_line_start
+      line = @lines.line_at(@selection_end)
+      index = line.new_line? ? line.start + 1 : line.start
+      @selection_end = index
+    end
+
+    def move_to_line_start
+      line = @lines.line_at(@selection_end)
+      index = line.new_line? ? line.start + 1 : line.start
+      @selection_start = @selection_end = index
+    end
+
+    def find_line_end
+      line = @lines.line_at(@selection_end)
+      if line.wrapped?
+        if @selection_end == line.end
+          if @lines.length > line.number
+            line = @lines[line.number + 1]
+            line.wrapped? ? line.end - 1 : line.end
+          else
+            line.end
+          end
+        else
+          line.end - 1
+        end
+      else
+        line.end
+      end
+    end
+
+    def select_to_line_end
+      @selection_end = find_line_end
+    end
+
+    def move_to_line_end
+      @selection_start = @selection_end = find_line_end
+    end
+
+    def select_line_up
+      @selection_end = selection_end_up_index
+    end
+
+    def move_line_up
+      @selection_end = @selection_start = selection_end_up_index
+    end
+
+    def select_line_down
+      @selection_end = selection_end_down_index
+    end
+
+    def move_line_down
+      @selection_end = @selection_start = selection_end_down_index
+    end
+
+    def selection_end_up_index
+      return 0 if selection_end == 0
+
+      line = @lines.line_at(@selection_end)
+      if line.wrapped? && line.end == @selection_end
+        line.new_line? ? line.start + 1 : line.start
+      elsif line.number == 0
+        @selection_end
+      elsif line.new_line? && @selection_end == line.start + 1
+        line = @lines[line.number - 1]
+        line.new_line? ? line.start + 1 : line.start
+      elsif @selection_end == line.start
+        @lines[line.number - 1].start
+      else
+        @lines[line.number - 1].index_at(@cursor_x - @x + @source_x)
+      end
+    end
+
+    def selection_end_down_index
+      line = @lines.line_at(@selection_end)
+      if line.number == @lines.length - 1
+        @selection_end
+      elsif line.new_line? && @selection_end == line.start + 1
+        line = @lines[line.number + 1]
+        line.new_line? ? line.start + 1 : line.start
+      elsif @selection_end == line.start
+        @lines[line.number + 1].start
+      elsif line.wrapped? && line.end == @selection_end && line.number < @lines.length - 2
+        line = @lines[line.number + 2]
+        line.new_line? ? line.start + 1 : line.start
+      else
+        @lines[line.number + 1].index_at(@cursor_x - @x + @source_x)
       end
     end
 
@@ -291,7 +314,8 @@ module Input
               selection_length_count = -1
             else
               # selection to end of line and continues
-              rt.primitives << { x: left, y: y + @padding, w: @w - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
+              right = line.measure_to(line.length)
+              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
               selection_length_count -= line_chars_left
             end
             selection_start_count = -1
@@ -306,8 +330,9 @@ module Input
             selection_length_count = -1
           else
             # whole line is part of the selection
+            right = line.measure_to(line.length)
             selection_length_count -= line.length
-            rt.primitives << { x: 0, y: y + @padding, w: @w, h: @font_height + @padding * 2 }.solid!(@selection_color)
+            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(@selection_color)
           end
         end
 

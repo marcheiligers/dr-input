@@ -45,7 +45,7 @@ module Input
       end
 
       def index_at(x)
-        return 0 if x <= 0
+        return @start if x <= 0
 
         index = -1
         width = 0

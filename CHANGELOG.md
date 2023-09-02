@@ -1,3 +1,13 @@
+# v0.0.5 -
+
+* Refactored to use `module Input` and classes `Text` and `Multiline`
+* Fixed: move to start and end of line for Multiline
+* Updated multiline selection to stop at text end
+* Up and down for multiline no longer move to start and end on the first and last lines respectively anymore
+* Fixed: up and down not working from the start of the line in multiline
+* Refactored to use methods in response to keyboard, and documented methods
+* Renamed `#focus!` to `focus`, and `blur!` to `blur`
+
 # v0.0.4 - 27 August 2023
 
 * Added a background color property.
@@ -6,7 +16,7 @@
 * Fixed: Inserting multiple characters (paste, or multiple characters) in a single tick
 * Implement key repeat for cursor movement
 * Fixed: At some point walking single character words was fixed
-* Added focus state, `#focussed?`, `#focus!`, `#blur!`
+* Added focus state, `#focussed?`, `#focus`, `#blur`
 * Added `on_clicked` and `on_unhandled_key` callbacks
 * Added mouse selection for word wrapped control
 * Added up and down (without `[alt]`) for word wrapped control

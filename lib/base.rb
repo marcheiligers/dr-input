@@ -1,7 +1,7 @@
 module Input
   class Base
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end, :lines
+    attr_reader :value, :selection_start, :selection_end
 
     SIZE_ENUM = {
       small: -1,
@@ -17,8 +17,8 @@ module Input
 
     NOOP = -> {}
 
-    # BUG: Modifier keys are broken on the web
-    META_KEYS = %i[meta_left meta_right meya]
+    # BUG: Modifier keys are broken on the web ()
+    META_KEYS = %i[meta_left meta_right meta]
     SHIFT_KEYS = %i[shift_left shift_right shift]
     ALT_KEYS = %i[alt_left alt_right alt]
     CTRL_KEYS = %i[control_left control_right control]
@@ -127,12 +127,93 @@ module Input
       @focussed
     end
 
-    def focus!
+    def focus
       @will_focus = true
     end
 
-    def blur!
+    def blur
       @focussed = false
+    end
+
+    def select_all
+      @selection_start = 0
+      @selection_end = @value.length
+    end
+
+    def select_to_start
+      @selection_end = 0
+    end
+
+    def move_to_start
+      @selection_start = @selection_end = 0
+    end
+
+    def select_to_end
+      @selection_end = @value.length
+    end
+
+    def move_to_end
+      @selection_start = @selection_end = @value.length
+    end
+
+    def delete_back
+      if @selection_start == @selection_end
+        @value = @value[0, @selection_start - 1].to_s + @value[@selection_start, @value.length]
+        @selection_start = (@selection_start - 1).greater(0)
+        @selection_end = @selection_start
+      elsif @selection_start < @selection_end
+        @value = @value[0, @selection_start] + @value[@selection_end, @value.length]
+        @selection_end = @selection_start
+      else
+        @value = @value[0, @selection_end] + @value[@selection_start, @value.length]
+        @selection_start = @selection_end
+      end
+    end
+
+    def select_word_left
+      @selection_end = find_word_break_left
+    end
+
+    def select_word_right
+      @selection_end = find_word_break_right
+    end
+
+    def select_char_left
+      @selection_end = (@selection_end - 1).greater(0)
+    end
+
+    def select_char_right
+      @selection_end = (@selection_end + 1).lesser(@value.length)
+    end
+
+    def move_word_left
+      @selection_start = @selection_end = find_word_break_left
+    end
+
+    def move_word_right
+      @selection_start = @selection_end = find_word_break_right
+    end
+
+    def move_char_left
+      @selection_end = if @selection_end > @selection_start
+                         @selection_start
+                       elsif @selection_end < @selection_start
+                         @selection_end
+                       else
+                         (@selection_start - 1).greater(0)
+                       end
+      @selection_start = @selection_end
+    end
+
+    def move_char_right
+      @selection_end = if @selection_end > @selection_start
+                         @selection_end
+                       elsif @selection_end < @selection_start
+                         @selection_start
+                       else
+                         (@selection_start + 1).lesser(@value.length)
+                       end
+      @selection_start = @selection_end
     end
 
     def copy
@@ -185,6 +266,7 @@ module Input
       end
       @selection_end = @selection_start
     end
+    alias replace insert
 
     # TODO: Improve walking words
     def find_word_break_left

@@ -57,9 +57,29 @@ end
 ### Instance Methods
 
 * `#insert(text)` - Inserts text at the cursor location, or replaces if there's a selection
-* `#focus!` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
-* `#blur!` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
-
+* `#replace(text)` - Alias for `#insert(text)`
+* `#cut` - Cut selection to `$clipboard`
+* `#copy` - Copy selection to `$clipboard`
+* `#paste` - Paste value in `$clipboard`
+* `#move_to_start` - Move to the start of the current line
+* `#move_word_left` - Move the cursor a word to the left
+* `#move_char_left` - Move the cursor a character to the left
+* `#move_word_right` - Move the cursor a word to the right
+* `#move_char_right` - Move the cursor a character to the right
+* `#move_line_up` - Move the cursor one line up
+* `#move_line_down` - Move the cursor one line up
+* `#select_all` - Select all
+* `#select_to_start` - Select to the start of the text value
+* `#select_to_line_start` - Select to the start of the current line (`Multiline` only)
+* `#select_word_left` - Select a word to the left
+* `#select_char_left` - Select a character to the left
+* `#select_to_end` - Select to the end of the text value
+* `#select_to_line_end` - Select to the end of the current line (`Multiline` only)
+* `#select_word_right` - Select a word to the right
+* `#select_char_right` - Select a character to the right
+* `#select_line_up` - Select one line up
+* `#focus` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
+* `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
 
 ## Notes
 

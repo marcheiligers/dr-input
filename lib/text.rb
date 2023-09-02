@@ -11,8 +11,7 @@ module Input
       if @meta || @ctrl
         # TODO: undo/redo
         if @down_keys.include?(:a)
-          @selection_start = 0
-          @selection_end = @value.length
+          select_all
         elsif @down_keys.include?(:c) && @selection_start != @selection_end
           copy
         elsif @down_keys.include?(:x) && @selection_start != @selection_end
@@ -20,62 +19,27 @@ module Input
         elsif @down_keys.include?(:v)
           paste
         elsif @down_keys.include?(:left)
-          if @shift
-            @selection_end = 0
-          else
-            @selection_start = @selection_end = 0
-          end
+          @shift ? select_to_start : move_to_start
         elsif @down_keys.include?(:right)
-          if @shift
-            @selection_end = @value.length
-          else
-            @selection_start = @selection_end = @value.length
-          end
+          @shift ? select_to_end : move_to_end
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
-          if @selection_start == @selection_end
-            @value = @value[0, @selection_start - 1].to_s + @value[@selection_start, @value.length]
-            @selection_start = (@selection_start - 1).greater(0)
-            @selection_end = @selection_start
-          elsif @selection_start < @selection_end
-            @value = @value[0, @selection_start] + @value[@selection_end, @value.length]
-            @selection_end = @selection_start
-          else
-            @value = @value[0, @selection_end] + @value[@selection_start, @value.length]
-            @selection_start = @selection_end
-          end
+          # TODO: Treat delete and backspace differently
+          delete_back
         elsif @down_keys.include?(:left)
           if @shift
-            @selection_end = @alt ? find_word_break_left : (@selection_end - 1).greater(0)
+            @alt ? select_word_left : select_char_left
           else
-            @selection_start = if @alt
-                                 find_word_break_left
-                               elsif @selection_end > @selection_start
-                                 @selection_start
-                               elsif @selection_end < @selection_start
-                                 @selection_end
-                               else
-                                 (@selection_start - 1).greater(0)
-                               end
-            @selection_end = @selection_start
+            @alt ? move_word_left : move_char_left
           end
         elsif @down_keys.include?(:right)
           if @shift
-            @selection_end = @alt ? find_word_break_right : (@selection_end + 1).lesser(@value.length)
+            @alt ? select_word_right : select_char_right
           else
-            @selection_start = if @alt
-                                 find_word_break_right
-                               elsif @selection_end > @selection_start
-                                 @selection_end
-                               elsif @selection_end < @selection_start
-                                 @selection_start
-                               else
-                                 (@selection_start + 1).lesser(@value.length)
-                               end
-            @selection_end = @selection_start
+            @alt ? move_word_right : move_char_right
           end
         else
           @on_unhandled_key.call(@down_keys.first, self)
@@ -105,42 +69,6 @@ module Input
         index = find_index_at_x(mouse.x - @x + @source_x) # TODO: handle scrolling to the right with mouse
         @selection_end = index
         @mouse_down = false if mouse.up
-      end
-    end
-
-    # TODO: Improve walking words
-    def find_word_break_left
-      return 0 if @selection_end == 0
-
-      index = @selection_end
-
-      loop do
-        index -= 1
-        return 0 if index == 0
-        break if @word_chars.include?(@value[index, 1])
-      end
-
-      loop do
-        index -= 1
-        return 0 if index == 0
-        return index + 1 unless @word_chars.include?(@value[index, 1])
-      end
-    end
-
-    def find_word_break_right(index = @selection_end)
-      length = @value.length
-      return length if index == length
-
-      loop do
-        index += 1
-        return length if index == length
-        break if @word_chars.include?(@value[index, 1])
-      end
-
-      loop do
-        index += 1
-        return length if index == length
-        return index unless @word_chars.include?(@value[index, 1])
       end
     end
 
