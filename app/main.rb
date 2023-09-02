@@ -7,7 +7,7 @@ DEBUG_LABEL = { x: 20, r: 80, size_enum: -2 }.freeze
 
 def tick(args)
   if args.tick_count == 0
-    args.state.no_wrap ||= SimpleInput.new(
+    args.state.no_wrap ||= Input::Text.new(
       x: 20,
       y: 660,
       w: 1240,
@@ -26,7 +26,7 @@ def tick(args)
         args.state.wrapping.blur!
       end
     )
-    args.state.wrapping ||= WordWrapInput.new(
+    args.state.wrapping ||= Input::Multiline.new(
       x: 20,
       y: 620,
       w: 1240,

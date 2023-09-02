@@ -1,11 +1,11 @@
-class Input
+module Input
   class LineCollection
     attr_reader :text_length
 
     include Enumerable
 
     class Line
-      attr_reader :number, :text, :clean_text, :start, :end, :length, :wrapped
+      attr_reader :number, :text, :clean_text, :start, :end, :length, :wrapped, :new_line
 
       def initialize(number, start, text, wrapped, font, size_enum)
         @number = number
@@ -15,12 +15,17 @@ class Input
         @length = text.length
         @end = start + @length
         @wrapped = wrapped
+        @new_line = text[0] == "\n"
         @font = font
         @size_enum = size_enum
       end
 
       def wrapped?
         @wrapped
+      end
+
+      def new_line?
+        @new_line
       end
 
       def to_s
