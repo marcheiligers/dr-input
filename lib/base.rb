@@ -130,7 +130,7 @@ module Input
     end
 
     def value=(text)
-      @value = value
+      @value = text
       @selection_start = @selection_start.lesser(@value.length)
       @selection_end = @selection_end.lesser(@value.length)
     end
