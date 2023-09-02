@@ -8,6 +8,7 @@
 * Refactored to use methods in response to keyboard, and documented methods
 * Renamed `#focus!` to `focus`, and `blur!` to `blur`
 * Added blurred colors
+* Documented accessors
 
 # v0.0.4 - 27 August 2023
 
@@ -58,32 +59,29 @@
 
 # Known Issues and TODO
 
-// Sunday 08/27/23 at 05:15PM - 28 files in 0.11 secs
+// Saturday 09/02/23 at 04:45PM - 33 files in 0.1 secs
 
-## BUG (2)
-1. lib/word_wrap_input.rb:94    up from the first row is going to 0???
-2. lib/word_wrap_input.rb:108   down from the first row isn't working???
+## BUG (1)
+1. lib/base.rb:20         Modifier keys are broken on the web ()
 
-## TODO (22)
-1. lib/word_wrap_input.rb:271   Show cursor at start of next line if after the white space at the end of the current line (0)
-2. lib/input.rb:74              Blurred colors
-3. lib/input.rb:106             Cursor renders outside of the bounds of the control
-4. lib/input.rb:194             Improve walking words
-5. lib/word_wrap_input.rb:17    undo/redo
-6. lib/word_wrap_input.rb:92    Retain a original_cursor_x when moving up/down to try stay generally in the same x range
-7. lib/word_wrap_input.rb:100   beginning of previous paragraph
-8. lib/word_wrap_input.rb:114   end of next paragraph
-9. lib/word_wrap_input.rb:135   Word selection (double click), All selection (triple click)
-10. lib/word_wrap_input.rb:176  prolly need to replace \r\n with \n up front
-11. lib/word_wrap_input.rb:180  consider how to render TAB, maybe convert TAB into 4 spaces?
-12. lib/word_wrap_input.rb:186  consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
-13. lib/word_wrap_input.rb:204  consider how to render TAB, maybe convert TAB into 4 spaces?
-14. lib/word_wrap_input.rb:247  Implement line spacing
-15. lib/word_wrap_input.rb:252  implement sprite background
-16. lib/word_wrap_input.rb:272  Ensure cursor_x doesn't go past the line width
-17. lib/simple_input.rb:11      undo/redo
-18. lib/simple_input.rb:87      Word selection (double click), All selection (triple click)
-19. lib/simple_input.rb:104     handle scrolling to the right with mouse
-20. lib/simple_input.rb:110     Improve walking words
-21. lib/simple_input.rb:163     handle padding correctly
-22. lib/simple_input.rb:169     implement sprite background
+## TODO (20)
+1. lib/base.rb:107        Cursor renders outside of the bounds of the control
+2. lib/base.rb:291        Improve walking words
+3. lib/text.rb:12         undo/redo
+4. lib/text.rb:30         Treat delete and backspace differently
+5. lib/text.rb:52         Word selection (double click), All selection (triple click)
+6. lib/text.rb:69         handle scrolling to the right with mouse
+7. lib/text.rb:92         handle padding correctly
+8. lib/text.rb:106        implement sprite background
+9. lib/multiline.rb:20    undo/redo
+10. lib/multiline.rb:51   Retain a original_cursor_x when moving up/down to try stay generally in the same x range
+11. lib/multiline.rb:56   beginning of previous paragraph with alt
+12. lib/multiline.rb:63   end of next paragraph with alt
+13. lib/multiline.rb:169  Word selection (double click), All selection (triple click)
+14. lib/multiline.rb:210  prolly need to replace \r\n with \n up front
+15. lib/multiline.rb:214  consider how to render TAB, maybe convert TAB into 4 spaces?
+16. lib/multiline.rb:220  consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
+17. lib/multiline.rb:238  consider how to render TAB, maybe convert TAB into 4 spaces?
+18. lib/multiline.rb:289  Implement line spacing
+19. lib/multiline.rb:294  implement sprite background
+20. lib/multiline.rb:312  Ensure cursor_x doesn't go past the line width
