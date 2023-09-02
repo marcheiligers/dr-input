@@ -7,6 +7,7 @@
 * Fixed: up and down not working from the start of the line in multiline
 * Refactored to use methods in response to keyboard, and documented methods
 * Renamed `#focus!` to `focus`, and `blur!` to `blur`
+* Added blurred colors
 
 # v0.0.4 - 27 August 2023
 

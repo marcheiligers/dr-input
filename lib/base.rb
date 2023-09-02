@@ -53,6 +53,7 @@ module Input
         vertical_alignment_enum: 0
       }
       @background_color = params[:background_color]
+      @blurred_background_color = params[:blurred_background_color] || @background_color
 
       @value = params[:value] || ''
 
@@ -66,7 +67,12 @@ module Input
         a: params[:selection_a] || 128
       }
 
-      # TODO: Blurred colors
+      @blurred_selection_color = {
+        r: params[:blurred_selection_r] || 112,
+        g: params[:blurred_selection_g] || 128,
+        b: params[:blurred_selection_b] || 144,
+        a: params[:blurred_selection_a] || 128
+      }
 
       # To manage the flashing cursor
       @cursor_ticks = 0
@@ -121,6 +127,20 @@ module Input
       end
       handle_mouse
       prepare_render_target
+    end
+
+    def value=(text)
+      @value = value
+      @selection_start = @selection_start.lesser(@value.length)
+      @selection_end = @selection_end.lesser(@value.length)
+    end
+
+    def selection_start=(index)
+      @selection_start = index.cap_min_max(0, @value.length)
+    end
+
+    def selection_end=(index)
+      @selection_end = index.cap_min_max(0, @value.length)
     end
 
     def focussed?

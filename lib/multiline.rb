@@ -276,13 +276,21 @@ module Input
     end
 
     def prepare_render_target
+      if @focussed || @will_focus
+        bg = @background_color
+        sc = @selection_color
+      else
+        bg = @blurred_background_color
+        sc = @blurred_selection_color
+      end
+
       @lines = perform_word_wrap
 
       @h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
       rt = $args.outputs[@path]
       rt.w = @w
       rt.h = @h
-      rt.background_color = @background_color
+      rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
@@ -310,12 +318,12 @@ module Input
             if selection_length_count - line_chars_left < 0
               # whole selection on this line
               right = line.measure_to(selection_start_count + selection_length_count)
-              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
+              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
               selection_length_count = -1
             else
               # selection to end of line and continues
               right = line.measure_to(line.length)
-              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
+              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
               selection_length_count -= line_chars_left
             end
             selection_start_count = -1
@@ -326,13 +334,13 @@ module Input
           if selection_length_count - line.length < 0
             # selection ends in this line
             right = line.measure_to(selection_length_count)
-            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(@selection_color)
+            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(sc)
             selection_length_count = -1
           else
             # whole line is part of the selection
             right = line.measure_to(line.length)
             selection_length_count -= line.length
-            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(@selection_color)
+            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(sc)
           end
         end
 

@@ -90,11 +90,19 @@ module Input
 
     def prepare_render_target
       # TODO: handle padding correctly
+      if @focussed || @will_focus
+        bg = @background_color
+        sc = @selection_color
+      else
+        bg = @blurred_background_color
+        sc = @blurred_selection_color
+      end
+
       @text_width = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
       rt = $args.outputs[@path]
       rt.w = @text_width
       rt.h = @h
-      rt.background_color = @background_color
+      rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
@@ -108,7 +116,7 @@ module Input
           right, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)
         end
 
-        rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(@selection_color)
+        rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
       end
 
       # TEXT

@@ -14,7 +14,8 @@ def tick(args)
       value: 'this is a non-wrapping input field',
       font: FONT,
       size_enum: :xxxlarge,
-      background_color: [200, 200, 200],
+      background_color: [220, 220, 220],
+      blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
           input.blur
@@ -33,7 +34,8 @@ def tick(args)
       value: 'this is a wrapping (multiline) input field',
       font: FONT,
       size_enum: :xxxlarge,
-      background_color: [200, 200, 200],
+      background_color: [220, 220, 220],
+      blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
           input.blur
@@ -52,8 +54,8 @@ def tick(args)
   args.state.wrapping.tick
   args.state.wrapping.y = 620 - args.state.wrapping.h
   args.outputs.primitives << [
-    { x: 20, y: 660, w: 1240, h: args.state.no_wrap.h, r: 200, g: 200, b: 200 }.solid!,
-    { x: 20, y: args.state.wrapping.y, w: 1240, h: args.state.wrapping.h, r: 200, g: 200, b: 200 }.solid!,
+    { x: 20, y: 660, w: 1240, h: args.state.no_wrap.h, r: 192, g: 192, b: 192 }.solid!,
+    { x: 20, y: args.state.wrapping.y, w: 1240, h: args.state.wrapping.h, r: 192, g: 192, b: 192 }.solid!,
     args.state.no_wrap,
     args.state.wrapping,
     # { x: 100, y: 600, w: 394, h: 2 }.solid!
