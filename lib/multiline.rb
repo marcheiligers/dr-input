@@ -20,9 +20,9 @@ module Input
         # TODO: undo/redo
         if @down_keys.include?(:a)
           select_all
-        elsif @down_keys.include?(:c) && @selection_start != @selection_end
+        elsif @down_keys.include?(:c)
           copy
-        elsif @down_keys.include?(:x) && @selection_start != @selection_end
+        elsif @down_keys.include?(:x)
           cut
         elsif @down_keys.include?(:v)
           paste

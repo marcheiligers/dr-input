@@ -237,6 +237,8 @@ module Input
     end
 
     def copy
+      return if @selection_start == @selection_end
+
       $clipboard = if @selection_start < @selection_end
                      @value[@selection_start, @selection_end - @selection_start]
                    else
