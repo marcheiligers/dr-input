@@ -4,14 +4,12 @@ A simple input control for DragonRuby.
 
 ## Usage
 
-### Simple
-
 ```ruby
 require 'lib/input.rb'
 
 def tick(args)
   # Create an input
-  args.state.input ||= Input.new(x: 100, y: 600, w: 300)
+  args.state.input ||= Input::Text.new(x: 100, y: 600, w: 300)
 
   # Allow the input to process inputs and render text (render_target)
   args.state.input.tick
@@ -23,6 +21,9 @@ def tick(args)
   args.outputs.primitives << args.state.input
 end
 ```
+
+See `app/main.rb` for a more complex example.
+
 
 ### Constructor Arguments
 
@@ -39,6 +40,7 @@ end
 * `b` - font color, blue component, default 0
 * `a` - font color, alpha component, default 255
 * `background_color` - background color, can be array or hash format, default nil
+* `blurred_background_color` - background color, can be array or hash format, default `background_color`
 * `word_chars` - characters considered to be parts of a word, default `('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']`
 * `punctuation_chars` - charcters considered to be punctuation, default `%w[! % , . ; : ' " \` ) \] } * &]`
 * `selection_start` - start of the selection (if any) in characters (Integer), default the length of the initial value
@@ -47,6 +49,10 @@ end
 * `selection_g` - selection color, green component, default 178
 * `selection_b` - selection color, blue component, default 255
 * `selection_a` - selection color, alpha component, default 128
+* `blurred_selection_r` - blurred selection color, red component, default 112
+* `blurred_selection_g` - blurred selection color, green component, default 128
+* `blurred_selection_b` - blurred selection color, blue component, default 144
+* `blurred_selection_a` - blurred selection color, alpha component, default 128
 * `key_repeat_delay` - delay before function key combinations (cursor, cut/copy/paste and so on) begin to repeat in ticks (Integer), default 20
 * `key_repeat_debounce` - number of ticks (Integer) between function key repeat, default 5
 * `word_wrap` - if the control should wrap (Boolean), default false
@@ -54,12 +60,40 @@ end
 * `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
 * `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
 
+### Attribute accessors
+
+* `value` - The current value
+* `selection_start` - The start of the current selection
+* `selection_end` - The end of the current selection. This is the cursor location.
+* `lines` - The value broken into individual lines (readonly)
+
 ### Instance Methods
 
 * `#insert(text)` - Inserts text at the cursor location, or replaces if there's a selection
-* `#focus!` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
-* `#blur!` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
-
+* `#replace(text)` - Alias for `#insert(text)`
+* `#cut` - Cut selection to `$clipboard`
+* `#copy` - Copy selection to `$clipboard`
+* `#paste` - Paste value in `$clipboard`
+* `#move_to_start` - Move to the start of the current line
+* `#move_word_left` - Move the cursor a word to the left
+* `#move_char_left` - Move the cursor a character to the left
+* `#move_word_right` - Move the cursor a word to the right
+* `#move_char_right` - Move the cursor a character to the right
+* `#move_line_up` - Move the cursor one line up
+* `#move_line_down` - Move the cursor one line up
+* `#select_all` - Select all
+* `#select_to_start` - Select to the start of the text value
+* `#select_to_line_start` - Select to the start of the current line (`Multiline` only)
+* `#select_word_left` - Select a word to the left
+* `#select_char_left` - Select a character to the left
+* `#select_to_end` - Select to the end of the text value
+* `#select_to_line_end` - Select to the end of the current line (`Multiline` only)
+* `#select_word_right` - Select a word to the right
+* `#select_char_right` - Select a character to the right
+* `#select_line_up` - Select one line up
+* `#focus` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
+* `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
+* `#focussed?` - Returns true if the input is focussed, false otherwise
 
 ## Notes
 

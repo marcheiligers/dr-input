@@ -7,53 +7,55 @@ DEBUG_LABEL = { x: 20, r: 80, size_enum: -2 }.freeze
 
 def tick(args)
   if args.tick_count == 0
-    args.state.no_wrap ||= SimpleInput.new(
+    args.state.no_wrap ||= Input::Text.new(
       x: 20,
       y: 660,
       w: 1240,
       value: 'this is a non-wrapping input field',
       font: FONT,
       size_enum: :xxxlarge,
-      background_color: [200, 200, 200],
+      background_color: [220, 220, 220],
+      blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
-          input.blur!
-          args.state.wrapping.focus!
+          input.blur
+          args.state.wrapping.focus
         end
       end,
       on_clicked: lambda do |_mouse, input|
-        input.focus!
-        args.state.wrapping.blur!
+        input.focus
+        args.state.wrapping.blur
       end
     )
-    args.state.wrapping ||= WordWrapInput.new(
+    args.state.wrapping ||= Input::Multiline.new(
       x: 20,
       y: 620,
       w: 1240,
       value: 'this is a wrapping (multiline) input field',
       font: FONT,
       size_enum: :xxxlarge,
-      background_color: [200, 200, 200],
+      background_color: [220, 220, 220],
+      blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
         if key == :tab
-          input.blur!
-          args.state.no_wrap.focus!
+          input.blur
+          args.state.no_wrap.focus
         end
       end,
       on_clicked: lambda do |_mouse, input|
-        input.focus!
-        args.state.no_wrap.blur!
+        input.focus
+        args.state.no_wrap.blur
       end
     )
-    args.state.no_wrap.focus!
+    args.state.no_wrap.focus
   end
 
   args.state.no_wrap.tick
   args.state.wrapping.tick
   args.state.wrapping.y = 620 - args.state.wrapping.h
   args.outputs.primitives << [
-    { x: 20, y: 660, w: 1240, h: args.state.no_wrap.h, r: 200, g: 200, b: 200 }.solid!,
-    { x: 20, y: args.state.wrapping.y, w: 1240, h: args.state.wrapping.h, r: 200, g: 200, b: 200 }.solid!,
+    { x: 20, y: 660, w: 1240, h: args.state.no_wrap.h, r: 192, g: 192, b: 192 }.solid!,
+    { x: 20, y: args.state.wrapping.y, w: 1240, h: args.state.wrapping.h, r: 192, g: 192, b: 192 }.solid!,
     args.state.no_wrap,
     args.state.wrapping,
     # { x: 100, y: 600, w: 394, h: 2 }.solid!
