@@ -1,6 +1,6 @@
 module Input
   class Multiline < Base
-    attr_reader :lines
+    attr_reader :lines, :content_h
 
     def initialize(**params)
       super
@@ -9,7 +9,24 @@ module Input
     end
 
     def draw_override(ffi)
-      ffi.draw_sprite_3(@x, @y, @w, @h, @path, 0, 255, 255, 255, 255, nil, nil, nil, nil, false, false, 0, 0, 0, 0, @w, @h)
+      # The argument order for ffi_draw.draw_sprite_3 is:
+      # x, y, w, h,
+      # path,
+      # angle,
+      # alpha, red_saturation, green_saturation, blue_saturation
+      # tile_x, tile_y, tile_w, tile_h,
+      # flip_horizontally, flip_vertically,
+      # angle_anchor_x, angle_anchor_y,
+      # source_x, source_y, source_w, source_h
+      ffi.draw_sprite_3(
+        @x, @y + @h - @source_h, @source_w, @source_h,
+        @path, 0,
+        255, 255, 255, 255,
+        nil, nil, nil, nil,
+        false, false,
+        0, 0,
+        @source_x, @source_y, @source_w, @source_h
+      )
       super # handles focus and draws the cursor
     end
 
@@ -20,56 +37,73 @@ module Input
         # TODO: undo/redo
         if @down_keys.include?(:a)
           select_all
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:c)
           copy
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:x)
           cut
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
           paste
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           @shift ? select_to_line_start : move_to_line_start
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:right)
           @shift ? select_to_line_end : move_to_line_end
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
           delete_back
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           if @shift
             @alt ? select_word_left : select_char_left
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_left : move_char_left
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:right)
           if @shift
             @alt ? select_word_right : select_char_right
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_right : move_char_right
+            @ensure_cursor_visible = true
           end
         # TODO: Retain a original_cursor_x when moving up/down to try stay generally in the same x range
         elsif @down_keys.include?(:up)
           if @shift
             select_line_up
+            @ensure_cursor_visible = true
           else
             # TODO: beginning of previous paragraph with alt
             move_line_up
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:down)
           if @shift
             select_line_down
+            @ensure_cursor_visible = true
           else
             # TODO: end of next paragraph with alt
             move_line_down
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:enter)
           insert("\n")
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
         insert(text_keys.join(''))
+        @ensure_cursor_visible = true
       end
     end
 
@@ -141,11 +175,12 @@ module Input
       elsif @selection_end == line.start
         @lines[line.number - 1].start
       else
-        @lines[line.number - 1].index_at(@cursor_x - @x + @source_x)
+        @lines[line.number - 1].index_at(@cursor_x + @source_x)
       end
     end
 
     def selection_end_down_index
+      # BUG: If the first line has only one char, down moves right from the first column
       line = @lines.line_at(@selection_end)
       if line.number == @lines.length - 1
         @selection_end
@@ -158,7 +193,7 @@ module Input
         line = @lines[line.number + 2]
         line.new_line? ? line.start + 1 : line.start
       else
-        @lines[line.number + 1].index_at(@cursor_x - @x + @source_x)
+        @lines[line.number + 1].index_at(@cursor_x + @source_x)
       end
     end
 
@@ -167,6 +202,7 @@ module Input
     end
 
     # TODO: Word selection (double click), All selection (triple click)
+    # TODO: ensure mouse selection knows about scrolling
     def handle_mouse
       mouse = $args.inputs.mouse
 
@@ -183,11 +219,13 @@ module Input
         else
           @selection_start = @selection_end = index
         end
+        @ensure_cursor_visible = true
       elsif @mouse_down
         line = @lines[(@h + @y - mouse.y + @source_y).idiv(@font_height).clamp(0, @lines.length - 1)]
         index = line.index_at(mouse.x - @x + @source_x)
         @selection_end = index
         @mouse_down = false if mouse.up
+        @ensure_cursor_visible = true
       end
     end
 
@@ -286,10 +324,10 @@ module Input
 
       @lines = perform_word_wrap
 
-      @h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
+      @content_h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
       rt = $args.outputs[@path]
       rt.w = @w
-      rt.h = @h
+      rt.h = @content_h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
@@ -306,7 +344,7 @@ module Input
       end
 
       @lines.each_with_index do |line, i|
-        y = @h - @padding - (i + 1) * @font_height
+        y = @content_h - @padding - (i + 1) * @font_height
 
         # SELECTION
         # TODO: Ensure cursor_x doesn't go past the line width
@@ -356,8 +394,28 @@ module Input
         line = @lines[line.number + 1]
         cursor_index = 0
       end
-      @cursor_y = @y + @h - @padding - (line.number + 1) * @font_height
-      @cursor_x = line.measure_to(cursor_index).lesser(@w) + @x
+
+      line_bottom = @content_h - (line.number + 1) * @font_height
+      if @content_h <= @h
+        @source_y = 0
+        @source_h = @content_h
+        @cursor_y = line_bottom
+      elsif @ensure_cursor_visible
+        @source_h = @h
+        if line_bottom + @font_height > @source_y + @source_h
+          @source_y = line_bottom + @font_height - @source_h
+        elsif line_bottom < @source_y
+          @source_y = line_bottom
+        end
+      else
+        @source_y = @source_y.cap_min_max(0, @content_h - @h)
+        @source_h = @h
+        @cursor_y = line_bottom
+      end
+
+      @cursor_x = line.measure_to(cursor_index).lesser(@w)
+      draw_cursor(rt)
+      @ensure_cursor_visible = false
     end
   end
 end

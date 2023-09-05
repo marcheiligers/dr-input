@@ -98,9 +98,9 @@ module Input
         sc = @blurred_selection_color
       end
 
-      @text_width = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
+      @content_w = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
       rt = $args.outputs[@path]
-      rt.w = @text_width
+      rt.w = @content_w
       rt.h = @h
       rt.background_color = bg
       # TODO: implement sprite background
@@ -123,9 +123,11 @@ module Input
       rt.primitives << { x: 0, y: @padding, text: @value, size_enum: @size_enum, font: @font }.label!(@text_color)
 
       # CURSOR LOCATION
-      cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
+      @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
+      @cursor_y = 0
+      draw_cursor(rt)
 
-      @source_w = @text_width < @w ? @text_width : @w
+      @source_w = @content_w < @w ? @content_w : @w
       if @source_w < @w
         @source_x = 0
       else
@@ -133,14 +135,11 @@ module Input
         if relative_cursor_x <= 0
           @source_x = cursor_x.greater(0)
         elsif relative_cursor_x > @w
-          @source_x = (cursor_x - @w).lesser(@text_width - @w)
+          @source_x = (cursor_x - @w).lesser(@content_w - @w)
         end
       end
 
-      @source_x = @text_width - @w if @text_width - @source_x < @w && @text_width > @w
-
-      @cursor_x = @x + cursor_x - @source_x
-      @cursor_y = @y
+      @source_x = @content_w - @w if @content_w - @source_x < @w && @content_w > @w
     end
   end
 end

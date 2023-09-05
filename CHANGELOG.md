@@ -1,4 +1,12 @@
-# v0.0.5 -
+# v0.0.6 - X September 2023
+
+* Added `rect` method
+* Fixed: Cursor renders outside of the bounds of the control
+* Adjusted index finding for up/down cursor movement in `Multiline`
+* Added scrolling for `Multiline` and exposed `#content_h` getter to help with building scroll bars
+
+
+# v0.0.5 - 2 September 2023
 
 * Refactored to use `module Input` and classes `Text` and `Multiline`
 * Fixed: move to start and end of line for Multiline

@@ -65,7 +65,10 @@ See `app/main.rb` for a more complex example.
 * `value` - The current value
 * `selection_start` - The start of the current selection
 * `selection_end` - The end of the current selection. This is the cursor location.
-* `lines` - The value broken into individual lines (readonly)
+* `lines` - The value broken into individual lines (readonly, `Multiline` only)
+* `content_w` - The width of the full content (`value`) as rendered (readonly, `Text` only)
+* `content_h` - The height of the full content (`value`) as rendered (readonly, `Multiline` only)
+* `rect` - Returns the control's containing rect as a hash (readonly)
 
 ### Instance Methods
 
