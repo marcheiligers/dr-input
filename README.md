@@ -74,6 +74,11 @@ See `app/main.rb` for a more complex example.
 
 * `#insert(text)` - Inserts text at the cursor location, or replaces if there's a selection
 * `#replace(text)` - Alias for `#insert(text)`
+* `#current_selection` - Returns the currently selected text
+* `#current_line` - Returns the currently selected line object
+* `#find(text)` - Selects the searched for text if found
+* `#find_next` - Selects the next instance of the currently selected text
+* `#find_prev` - Selects the previous instance of the currently selected text
 * `#cut` - Cut selection to `$clipboard`
 * `#copy` - Copy selection to `$clipboard`
 * `#paste` - Paste value in `$clipboard`
@@ -82,8 +87,10 @@ See `app/main.rb` for a more complex example.
 * `#move_char_left` - Move the cursor a character to the left
 * `#move_word_right` - Move the cursor a word to the right
 * `#move_char_right` - Move the cursor a character to the right
-* `#move_line_up` - Move the cursor one line up
-* `#move_line_down` - Move the cursor one line up
+* `#move_line_up` - Move the cursor one line up (`Multiline` only)
+* `#move_line_down` - Move the cursor one line up (`Multiline` only)
+* `#move_page_up` - Move the cursor one page up (`Multiline` only)
+* `#move_page_down` - Move the cursor one page up (`Multiline` only)
 * `#select_all` - Select all
 * `#select_to_start` - Select to the start of the text value
 * `#select_to_line_start` - Select to the start of the current line (`Multiline` only)
@@ -93,7 +100,10 @@ See `app/main.rb` for a more complex example.
 * `#select_to_line_end` - Select to the end of the current line (`Multiline` only)
 * `#select_word_right` - Select a word to the right
 * `#select_char_right` - Select a character to the right
-* `#select_line_up` - Select one line up
+* `#select_line_up` - Select one line up (`Multiline` only)
+* `#select_line_down` - Select one line down (`Multiline` only)
+* `#select_page_up` - Select one page up (`Multiline` only)
+* `#select_page_down` - Select one page down (`Multiline` only)
 * `#focus` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
 * `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
 * `#focussed?` - Returns true if the input is focussed, false otherwise

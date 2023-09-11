@@ -32,7 +32,10 @@ module Input
 
     def handle_keyboard
       text_keys = $args.inputs.text
-
+# Home is Cmd + ↑ / Fn + ←
+# End is Cmd + ↓ / Fn + →
+# PageUp is Fn + ↑
+# PageDown is Fn + ↓
       if @meta || @ctrl
         # TODO: undo/redo
         if @down_keys.include?(:a)
@@ -46,6 +49,9 @@ module Input
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
           paste
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:g)
+          @shift ? find_prev : find_next
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           @shift ? select_to_line_start : move_to_line_start
@@ -97,6 +103,12 @@ module Input
           end
         elsif @down_keys.include?(:enter)
           insert("\n")
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:pageup)
+          @shift ? select_page_up : move_page_up
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:pagedown)
+          @shift ? select_page_down : move_page_down
           @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
@@ -197,36 +209,51 @@ module Input
       end
     end
 
+    def move_page_up
+      (@h / @font_height).floor.times { @selection_start = @selection_end = selection_end_up_index }
+    end
+
+    def move_page_down
+      (@h / @font_height).floor.times { @selection_start = @selection_end = selection_end_down_index }
+    end
+
+    def select_page_up
+      (@h / @font_height).floor.times { @selection_end = selection_end_up_index }
+    end
+
+    def select_page_down
+      (@h / @font_height).floor.times { @selection_end = selection_end_down_index }
+    end
+
     def current_line
       @lines&.line_at(@selection_end)
     end
 
     # TODO: Word selection (double click), All selection (triple click)
-    # TODO: ensure mouse selection knows about scrolling
     def handle_mouse
       mouse = $args.inputs.mouse
+      return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      if !@mouse_down && mouse.down && mouse.inside_rect?(self)
+      relative_y = @content_h - (mouse.y - @y + @source_y)
+      line = @lines[relative_y.idiv(@font_height).cap_min_max(0, @lines.length - 1)]
+      index = line.index_at(mouse.x - @x + @source_x)
+
+      if @mouse_down # dragging
+        @selection_end = index
+        @mouse_down = false if mouse.up
+      else # clicking
         @on_clicked.call(mouse, self)
         return unless @focussed || @will_focus
 
-        @mouse_down = true
-
-        line = @lines[(@h + @y - mouse.y + @source_y).idiv(@font_height).cap_min_max(0, @lines.length - 1)]
-        index = line.index_at(mouse.x - @x + @source_x)
         if @shift
           @selection_end = index
         else
           @selection_start = @selection_end = index
         end
-        @ensure_cursor_visible = true
-      elsif @mouse_down
-        line = @lines[(@h + @y - mouse.y + @source_y).idiv(@font_height).clamp(0, @lines.length - 1)]
-        index = line.index_at(mouse.x - @x + @source_x)
-        @selection_end = index
-        @mouse_down = false if mouse.up
-        @ensure_cursor_visible = true
+        @mouse_down = true
       end
+
+      @ensure_cursor_visible = true
     end
 
     def find_word_breaks(value = @value)
@@ -395,22 +422,20 @@ module Input
         cursor_index = 0
       end
 
-      line_bottom = @content_h - (line.number + 1) * @font_height
+      @cursor_y = @content_h - (line.number + 1) * @font_height
       if @content_h <= @h
         @source_y = 0
         @source_h = @content_h
-        @cursor_y = line_bottom
       elsif @ensure_cursor_visible
         @source_h = @h
-        if line_bottom + @font_height > @source_y + @source_h
-          @source_y = line_bottom + @font_height - @source_h
-        elsif line_bottom < @source_y
-          @source_y = line_bottom
+        if @cursor_y + @font_height > @source_y + @source_h
+          @source_y = @cursor_y + @font_height - @source_h
+        elsif @cursor_y < @source_y
+          @source_y = @cursor_y
         end
       else
         @source_y = @source_y.cap_min_max(0, @content_h - @h)
         @source_h = @h
-        @cursor_y = line_bottom
       end
 
       @cursor_x = line.measure_to(cursor_index).lesser(@w)

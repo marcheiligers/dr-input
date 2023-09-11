@@ -22,6 +22,8 @@ module Input
           @shift ? select_to_start : move_to_start
         elsif @down_keys.include?(:right)
           @shift ? select_to_end : move_to_end
+        elsif @down_keys.include?(:g)
+          @shift ? find_prev : find_next
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
@@ -133,9 +135,9 @@ module Input
       else
         relative_cursor_x = cursor_x - @source_x
         if relative_cursor_x <= 0
-          @source_x = cursor_x.greater(0)
+          @source_x = @cursor_x.greater(0)
         elsif relative_cursor_x > @w
-          @source_x = (cursor_x - @w).lesser(@content_w - @w)
+          @source_x = (@cursor_x - @w).lesser(@content_w - @w)
         end
       end
 

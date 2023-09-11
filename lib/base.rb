@@ -1,7 +1,7 @@
 module Input
   class Base
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end
+    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y
 
     SIZE_ENUM = {
       small: -1,
@@ -296,6 +296,44 @@ module Input
       @selection_end = @selection_start
     end
     alias replace insert
+
+    def find(text)
+      index = @value.index(text)
+      return unless index
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def current_selection
+      return nil if @selection_start == @selection_end
+
+      if @selection_start < @selection_end
+        @value[@selection_start, @selection_end - @selection_start]
+      else
+        @value[@selection_end, @selection_start - @selection_end]
+      end
+    end
+
+    def find_next
+      text = current_selection
+      return if text.nil?
+
+      index = @value.index(text, @selection_end.greater(@selection_start)) || @value.index(text)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def find_prev
+      text = current_selection
+      return if text.nil?
+
+      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || @value.rindex(text, @value.length)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
 
     # TODO: Improve walking words
     def find_word_break_left
