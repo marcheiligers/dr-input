@@ -1,6 +1,6 @@
 module Input
   class Multiline < Base
-    attr_reader :lines
+    attr_reader :lines, :content_h
 
     def initialize(**params)
       super
@@ -9,67 +9,113 @@ module Input
     end
 
     def draw_override(ffi)
-      ffi.draw_sprite_3(@x, @y, @w, @h, @path, 0, 255, 255, 255, 255, nil, nil, nil, nil, false, false, 0, 0, 0, 0, @w, @h)
+      # The argument order for ffi_draw.draw_sprite_3 is:
+      # x, y, w, h,
+      # path,
+      # angle,
+      # alpha, red_saturation, green_saturation, blue_saturation
+      # tile_x, tile_y, tile_w, tile_h,
+      # flip_horizontally, flip_vertically,
+      # angle_anchor_x, angle_anchor_y,
+      # source_x, source_y, source_w, source_h
+      ffi.draw_sprite_3(
+        @x, @y + @h - @source_h, @source_w, @source_h,
+        @path, 0,
+        255, 255, 255, 255,
+        nil, nil, nil, nil,
+        false, false,
+        0, 0,
+        @source_x, @source_y, @source_w, @source_h
+      )
       super # handles focus and draws the cursor
     end
 
     def handle_keyboard
       text_keys = $args.inputs.text
-
+# Home is Cmd + ↑ / Fn + ←
+# End is Cmd + ↓ / Fn + →
+# PageUp is Fn + ↑
+# PageDown is Fn + ↓
       if @meta || @ctrl
         # TODO: undo/redo
         if @down_keys.include?(:a)
           select_all
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:c)
           copy
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:x)
           cut
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
           paste
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:g)
+          @shift ? find_prev : find_next
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           @shift ? select_to_line_start : move_to_line_start
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:right)
           @shift ? select_to_line_end : move_to_line_end
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
           delete_back
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           if @shift
             @alt ? select_word_left : select_char_left
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_left : move_char_left
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:right)
           if @shift
             @alt ? select_word_right : select_char_right
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_right : move_char_right
+            @ensure_cursor_visible = true
           end
         # TODO: Retain a original_cursor_x when moving up/down to try stay generally in the same x range
         elsif @down_keys.include?(:up)
           if @shift
             select_line_up
+            @ensure_cursor_visible = true
           else
             # TODO: beginning of previous paragraph with alt
             move_line_up
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:down)
           if @shift
             select_line_down
+            @ensure_cursor_visible = true
           else
             # TODO: end of next paragraph with alt
             move_line_down
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:enter)
           insert("\n")
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:pageup)
+          @shift ? select_page_up : move_page_up
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:pagedown)
+          @shift ? select_page_down : move_page_down
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
         insert(text_keys.join(''))
+        @ensure_cursor_visible = true
       end
     end
 
@@ -141,11 +187,12 @@ module Input
       elsif @selection_end == line.start
         @lines[line.number - 1].start
       else
-        @lines[line.number - 1].index_at(@cursor_x - @x + @source_x)
+        @lines[line.number - 1].index_at(@cursor_x + @source_x)
       end
     end
 
     def selection_end_down_index
+      # BUG: If the first line has only one char, down moves right from the first column
       line = @lines.line_at(@selection_end)
       if line.number == @lines.length - 1
         @selection_end
@@ -158,8 +205,24 @@ module Input
         line = @lines[line.number + 2]
         line.new_line? ? line.start + 1 : line.start
       else
-        @lines[line.number + 1].index_at(@cursor_x - @x + @source_x)
+        @lines[line.number + 1].index_at(@cursor_x + @source_x)
       end
+    end
+
+    def move_page_up
+      (@h / @font_height).floor.times { @selection_start = @selection_end = selection_end_up_index }
+    end
+
+    def move_page_down
+      (@h / @font_height).floor.times { @selection_start = @selection_end = selection_end_down_index }
+    end
+
+    def select_page_up
+      (@h / @font_height).floor.times { @selection_end = selection_end_up_index }
+    end
+
+    def select_page_down
+      (@h / @font_height).floor.times { @selection_end = selection_end_down_index }
     end
 
     def current_line
@@ -169,26 +232,28 @@ module Input
     # TODO: Word selection (double click), All selection (triple click)
     def handle_mouse
       mouse = $args.inputs.mouse
+      return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      if !@mouse_down && mouse.down && mouse.inside_rect?(self)
+      relative_y = @content_h - (mouse.y - @y + @source_y)
+      line = @lines[relative_y.idiv(@font_height).cap_min_max(0, @lines.length - 1)]
+      index = line.index_at(mouse.x - @x + @source_x)
+
+      if @mouse_down # dragging
+        @selection_end = index
+        @mouse_down = false if mouse.up
+      else # clicking
         @on_clicked.call(mouse, self)
         return unless @focussed || @will_focus
 
-        @mouse_down = true
-
-        line = @lines[(@h + @y - mouse.y + @source_y).idiv(@font_height).cap_min_max(0, @lines.length - 1)]
-        index = line.index_at(mouse.x - @x + @source_x)
         if @shift
           @selection_end = index
         else
           @selection_start = @selection_end = index
         end
-      elsif @mouse_down
-        line = @lines[(@h + @y - mouse.y + @source_y).idiv(@font_height).clamp(0, @lines.length - 1)]
-        index = line.index_at(mouse.x - @x + @source_x)
-        @selection_end = index
-        @mouse_down = false if mouse.up
+        @mouse_down = true
       end
+
+      @ensure_cursor_visible = true
     end
 
     def find_word_breaks(value = @value)
@@ -286,10 +351,10 @@ module Input
 
       @lines = perform_word_wrap
 
-      @h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
+      @content_h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
       rt = $args.outputs[@path]
       rt.w = @w
-      rt.h = @h
+      rt.h = @content_h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
@@ -306,7 +371,7 @@ module Input
       end
 
       @lines.each_with_index do |line, i|
-        y = @h - @padding - (i + 1) * @font_height
+        y = @content_h - @padding - (i + 1) * @font_height
 
         # SELECTION
         # TODO: Ensure cursor_x doesn't go past the line width
@@ -356,8 +421,26 @@ module Input
         line = @lines[line.number + 1]
         cursor_index = 0
       end
-      @cursor_y = @y + @h - @padding - (line.number + 1) * @font_height
-      @cursor_x = line.measure_to(cursor_index).lesser(@w) + @x
+
+      @cursor_y = @content_h - (line.number + 1) * @font_height
+      if @content_h <= @h
+        @source_y = 0
+        @source_h = @content_h
+      elsif @ensure_cursor_visible
+        @source_h = @h
+        if @cursor_y + @font_height > @source_y + @source_h
+          @source_y = @cursor_y + @font_height - @source_h
+        elsif @cursor_y < @source_y
+          @source_y = @cursor_y
+        end
+      else
+        @source_y = @source_y.cap_min_max(0, @content_h - @h)
+        @source_h = @h
+      end
+
+      @cursor_x = line.measure_to(cursor_index).lesser(@w)
+      draw_cursor(rt)
+      @ensure_cursor_visible = false
     end
   end
 end

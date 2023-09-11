@@ -52,8 +52,10 @@ module Input
         while (index += 1) < length
           char = @text[index, 1]
           char_w = char == "\n" ? 0 : $gtk.calcstringbox(char, @size_enum, @font)[0]
-          return index + @start if width + char_w / 2 > x
-          return index + 1 + @start if width + char_w > x
+          # TODO: Test `index_at` with multiple different fonts
+          char_mid = char_w / 4
+          return index + @start if width + char_mid > x
+          return index + 1 + @start if width + char_mid > x
 
           width += char_w
         end

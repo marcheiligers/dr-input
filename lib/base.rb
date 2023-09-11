@@ -1,7 +1,7 @@
 module Input
   class Base
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end
+    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y
 
     SIZE_ENUM = {
       small: -1,
@@ -88,6 +88,8 @@ module Input
       @path = "__input_#{@@id += 1}"
       @source_x = 0
       @source_y = 0
+      @source_w = @w
+      @source_h = @h
 
       @focussed = params[:focussed] || false
       @will_focus = false # Get the focus at the end of the tick
@@ -103,8 +105,11 @@ module Input
       end
 
       return unless @focussed
+    end
 
-      # TODO: Cursor renders outside of the bounds of the control
+    def draw_cursor(rt)
+      return unless @focussed || @will_focus
+
       @cursor_ticks += @cursor_dir
       alpha = if @cursor_ticks == CURSOR_FULL_TICKS
                 @cursor_dir = -1
@@ -117,7 +122,9 @@ module Input
               else
                 255
               end
-      ffi.draw_solid(@cursor_x, @cursor_y, @padding, @font_height + @padding * 2, 0, 0, 0, alpha)
+      # TODO: cursor size
+      rt.primitives << { x: (@cursor_x - 1).greater(0), y: @cursor_y - @padding, w: @padding, h: @font_height + @padding * 2, r: 0, g: 0, b: 0, a: alpha }.solid!
+      # ffi.draw_solid(@cursor_x, @cursor_y, @padding, @font_height + @padding * 2, 0, 0, 0, alpha)
     end
 
     def tick
@@ -290,6 +297,44 @@ module Input
     end
     alias replace insert
 
+    def find(text)
+      index = @value.index(text)
+      return unless index
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def current_selection
+      return nil if @selection_start == @selection_end
+
+      if @selection_start < @selection_end
+        @value[@selection_start, @selection_end - @selection_start]
+      else
+        @value[@selection_end, @selection_start - @selection_end]
+      end
+    end
+
+    def find_next
+      text = current_selection
+      return if text.nil?
+
+      index = @value.index(text, @selection_end.greater(@selection_start)) || @value.index(text)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def find_prev
+      text = current_selection
+      return if text.nil?
+
+      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || @value.rindex(text, @value.length)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
     # TODO: Improve walking words
     def find_word_break_left
       return 0 if @selection_end == 0
@@ -324,6 +369,10 @@ module Input
         return length if index == length
         return index unless @word_chars.include?(@value[index, 1])
       end
+    end
+
+    def rect
+      { x: @x, y: @y, w: @w, h: @h }
     end
   end
 end

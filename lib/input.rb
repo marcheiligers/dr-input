@@ -5,3 +5,15 @@ require_relative 'text.rb'
 require_relative 'multiline.rb'
 
 $clipboard = ''
+
+# TODO: Make right click available - example context menu
+# TODO: Switch clipboard to system clipboard when setclipboard is available
+# TODO: Drag selected text
+# TODO: Max length
+# TODO: Home key and End key
+# TODO: Render Squiggly lines
+# TODO: Current input word getter
+# TODO: “ghosting text” feature
+# TODO: Find/Replace (all)
+# TODO: Prompt text (ghosted text when field is empty)
+# TODO: Replace unavailable chars with [?]

@@ -1,4 +1,14 @@
-# v0.0.5 -
+# v0.0.6 - X September 2023
+
+* Added `rect` method
+* Fixed: Cursor renders outside of the bounds of the control
+* Adjusted index finding for up/down cursor movement in `Multiline`
+* Added scrolling for `Multiline` and exposed `#content_h` getter to help with building scroll bars
+* Added `#find`, `#find_next` (`[meta|ctrl]+[g]`), `#find_prev` (`[meta|ctrl]+[shift]+[g]`) methods
+* Added `#move_page_up`, `#move_page_down`, `#select_page_up`, `#select_page_down` methods and keyboard short cuts
+
+
+# v0.0.5 - 2 September 2023
 
 * Refactored to use `module Input` and classes `Text` and `Multiline`
 * Fixed: move to start and end of line for Multiline
