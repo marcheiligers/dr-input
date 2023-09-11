@@ -1,4 +1,4 @@
-# v0.0.6 - X September 2023
+# v0.0.6 - 10 September 2023
 
 * Added `rect` method
 * Fixed: Cursor renders outside of the bounds of the control
