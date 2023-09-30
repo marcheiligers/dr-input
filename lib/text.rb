@@ -6,49 +6,7 @@ module Input
     end
 
     def handle_keyboard
-      text_keys = $args.inputs.text
 
-      if @meta || @ctrl
-        # TODO: undo/redo
-        if @down_keys.include?(:a)
-          select_all
-        elsif @down_keys.include?(:c)
-          copy
-        elsif @down_keys.include?(:x)
-          cut
-        elsif @down_keys.include?(:v)
-          paste
-        elsif @down_keys.include?(:left)
-          @shift ? select_to_start : move_to_start
-        elsif @down_keys.include?(:right)
-          @shift ? select_to_end : move_to_end
-        elsif @down_keys.include?(:g)
-          @shift ? find_prev : find_next
-        else
-          @on_unhandled_key.call(@down_keys.first, self)
-        end
-      elsif text_keys.empty?
-        if (@down_keys & DEL_KEYS).any?
-          # TODO: Treat delete and backspace differently
-          delete_back
-        elsif @down_keys.include?(:left)
-          if @shift
-            @alt ? select_word_left : select_char_left
-          else
-            @alt ? move_word_left : move_char_left
-          end
-        elsif @down_keys.include?(:right)
-          if @shift
-            @alt ? select_word_right : select_char_right
-          else
-            @alt ? move_word_right : move_char_right
-          end
-        else
-          @on_unhandled_key.call(@down_keys.first, self)
-        end
-      else
-        insert(text_keys.join(''))
-      end
     end
 
     # TODO: Word selection (double click), All selection (triple click)
