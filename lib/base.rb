@@ -17,14 +17,6 @@ module Input
 
     NOOP = -> {}
 
-    # BUG: Modifier keys are broken on the web ()
-    META_KEYS = %i[meta_left meta_right meta]
-    SHIFT_KEYS = %i[shift_left shift_right shift]
-    ALT_KEYS = %i[alt_left alt_right alt]
-    CTRL_KEYS = %i[control_left control_right control]
-    DEL_KEYS = %i[delete backspace]
-    IGNORE_KEYS = %i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS
-
     @@id = 0
 
     def initialize(**params)
@@ -262,24 +254,6 @@ module Input
     def paste
       @value = @value[0, @selection_start.lesser(@selection_end)] + $clipboard + @value[@selection_end.greater(@selection_start), @value.length]
       @selection_start = @selection_end = @selection_start.lesser(@selection_end) + $clipboard.length
-    end
-
-    def prepare_special_keys
-      keyboard = $args.inputs.keyboard
-
-      tick_count = $args.tick_count
-      repeat_keys = keyboard.key_held.truthy_keys.select do |key|
-        ticks = tick_count - keyboard.key_held.send(key).to_i
-        ticks > @key_repeat_delay && ticks % @key_repeat_debounce == 0
-      end
-      @down_keys = keyboard.key_down.truthy_keys.concat(repeat_keys) - IGNORE_KEYS
-
-      # Find special keys
-      special_keys = keyboard.key_down.truthy_keys + keyboard.key_held.truthy_keys
-      @meta = (special_keys & META_KEYS).any?
-      @alt = (special_keys & ALT_KEYS).any?
-      @shift = (special_keys & SHIFT_KEYS).any?
-      @ctrl = (special_keys & CTRL_KEYS).any?
     end
 
     def insert(str)
