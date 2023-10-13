@@ -1,7 +1,9 @@
 module Input
   class Base
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y
+    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
+                :content_x, :content_y, :content_w, :content_h,
+                :scroll_x, :scroll_y, :scroll_w, :scroll_h
 
     SIZE_ENUM = {
       small: -1,
@@ -86,10 +88,20 @@ module Input
 
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"
-      @source_x = 0
-      @source_y = 0
-      @source_w = @w
-      @source_h = @h
+      @source_x = 0 # TODO: remove, replaced by content_*
+      @source_y = 0 # TODO: remove, replaced by content_*
+      @source_w = @w # TODO: remove, replaced by content_*
+      @source_h = @h # TODO: remove, replaced by content_*
+
+      @content_x = 0
+      @content_y = 0
+      @content_w = @w
+      @content_h = @h
+
+      @scroll_x = 0
+      @scroll_y = 0
+      @scroll_w = @w
+      @scroll_h = @h
 
       @focussed = params[:focussed] || false
       @will_focus = false # Get the focus at the end of the tick
@@ -123,8 +135,7 @@ module Input
                 255
               end
       # TODO: cursor size
-      rt.primitives << { x: (@cursor_x - 1).greater(0), y: @cursor_y - @padding, w: @padding, h: @font_height + @padding * 2, r: 0, g: 0, b: 0, a: alpha }.solid!
-      # ffi.draw_solid(@cursor_x, @cursor_y, @padding, @font_height + @padding * 2, 0, 0, 0, alpha)
+      rt.primitives << { x: (@cursor_x - 1).greater(0), y: @cursor_y - @padding - @content_y, w: @padding, h: @font_height + @padding * 2, r: 0, g: 0, b: 0, a: alpha }.solid!
     end
 
     def tick
@@ -373,6 +384,14 @@ module Input
 
     def rect
       { x: @x, y: @y, w: @w, h: @h }
+    end
+
+    def content_rect
+      { x: @content_x, y: @content_y, w: @content_w, h: @content_h }
+    end
+
+    def scroll_rect
+      { x: @scroll_x, y: @scroll_y, w: @scroll_w, h: @scroll_h }
     end
   end
 end

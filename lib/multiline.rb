@@ -1,6 +1,6 @@
 module Input
   class Multiline < Base
-    attr_reader :lines, :content_h
+    attr_reader :lines
 
     def initialize(**params)
       super
@@ -19,13 +19,13 @@ module Input
       # angle_anchor_x, angle_anchor_y,
       # source_x, source_y, source_w, source_h
       ffi.draw_sprite_3(
-        @x, @y + @h - @source_h, @source_w, @source_h,
+        @x, @y + @h - @content_h, @content_w, @content_h,
         @path, 0,
         255, 255, 255, 255,
         nil, nil, nil, nil,
         false, false,
         0, 0,
-        @source_x, @source_y, @source_w, @source_h
+        0, 0, @content_w, @content_h
       )
       super # handles focus and draws the cursor
     end
@@ -187,7 +187,7 @@ module Input
       elsif @selection_end == line.start
         @lines[line.number - 1].start
       else
-        @lines[line.number - 1].index_at(@cursor_x + @source_x)
+        @lines[line.number - 1].index_at(@cursor_x + @content_x)
       end
     end
 
@@ -205,7 +205,7 @@ module Input
         line = @lines[line.number + 2]
         line.new_line? ? line.start + 1 : line.start
       else
-        @lines[line.number + 1].index_at(@cursor_x + @source_x)
+        @lines[line.number + 1].index_at(@cursor_x + @content_x)
       end
     end
 
@@ -231,12 +231,13 @@ module Input
 
     # TODO: Word selection (double click), All selection (triple click)
     def handle_mouse
+      return
       mouse = $args.inputs.mouse
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      relative_y = @content_h - (mouse.y - @y + @source_y)
+      relative_y = @content_h - (mouse.y - @y + @content_y)
       line = @lines[relative_y.idiv(@font_height).cap_min_max(0, @lines.length - 1)]
-      index = line.index_at(mouse.x - @x + @source_x)
+      index = line.index_at(mouse.x - @x + @content_x)
 
       if @mouse_down # dragging
         @selection_end = index
@@ -340,7 +341,19 @@ module Input
       lines << line
     end
 
-    def prepare_render_target
+    # @scroll_w - The `scroll_w` read-only property is a measurement of the width of an element's content,
+    #             including content not visible on the screen due to overflow. For this control `scroll_w == w`
+    # @content_w - The `content_w` read-only property is the inner width of the content in pixels.
+    #              It includes padding. For this control `content_w == w`
+    # @scroll_h - The `scroll_h` read-only property is a measurement of the height of an element's content,
+    #             including content not visible on the screen due to overflow.
+    #             http://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight
+    # @content_h - The `content_h` read-only property is the inner height of the content in pixels.
+    #              It includes padding. It is the lesser of `h` and `scroll_h`
+    # @cursor_line - The Line (Object) the cursor is on
+    # @cursor_index - The index of the string on the @cursor_line that the cursor is found
+    # @cursor_y - The y location of the cursor in relative to the scroll_h (all content)
+    def prepare_render_target # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       if @focussed || @will_focus
         bg = @background_color
         sc = @selection_color
@@ -351,13 +364,41 @@ module Input
 
       @lines = perform_word_wrap
 
-      @content_h = @lines.length * @font_height + 2 * @padding # TODO: Implement line spacing
+      # TODO: Implement line spacing
+      @scroll_w = @content_w = @w
+      @scroll_h = @lines.length * @font_height + 2 * @padding
+      @content_h = @h.lesser(@scroll_h)
       rt = $args.outputs[@path]
-      rt.w = @w
+      rt.w = @content_w
       rt.h = @content_h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
+
+      # CURSOR AND SCROLL LOCATION
+      @cursor_line = @lines.line_at(@selection_end)
+      @cursor_index = @selection_end - @cursor_line.start
+      # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
+      if @cursor_index == @cursor_line.length && @cursor_line.wrapped? && @lines.length > @cursor_line.number
+        @cursor_line = @lines[@cursor_line.number + 1]
+        @cursor_index = 0
+      end
+
+      @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
+      if @scroll_h <= @h # total height is less than height of the control
+        @content_y = 0
+      elsif @ensure_cursor_visible
+        if @cursor_y + @font_height > @content_y + @content_h
+          @content_y = @cursor_y + @font_height - @content_h
+        elsif @cursor_y < @content_y
+          @content_y = @cursor_y
+        end
+      else
+        @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
+      end
+      @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
+      @ensure_cursor_visible = false
+
 
       # putz @value.gsub("\n", '\n')
       # putz lines
@@ -370,8 +411,13 @@ module Input
         selection_length_count = -1
       end
 
-      @lines.each_with_index do |line, i|
-        y = @content_h - @padding - (i + 1) * @font_height
+      content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
+      content_top = @content_y + @content_h # internal use only, used for draw
+      selection_h = @font_height + @padding * 2
+
+      @lines.each_with_index do |line, i| # rubocop:disable Metrics/BlockLength
+        y = @scroll_h - @padding - (i + 1) * @font_height
+        draw = y > content_bottom && y < content_top # Only draw things in the view
 
         # SELECTION
         # TODO: Ensure cursor_x doesn't go past the line width
@@ -382,13 +428,17 @@ module Input
             left = line.measure_to(selection_start_count)
             if selection_length_count - line_chars_left < 0
               # whole selection on this line
-              right = line.measure_to(selection_start_count + selection_length_count)
-              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
+              if draw
+                right = line.measure_to(selection_start_count + selection_length_count)
+                rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
+              end
               selection_length_count = -1
             else
               # selection to end of line and continues
-              right = line.measure_to(line.length)
-              rt.primitives << { x: left, y: y + @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
+              if draw
+                right = line.measure_to(line.length)
+                rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
+              end
               selection_length_count -= line_chars_left
             end
             selection_start_count = -1
@@ -398,49 +448,28 @@ module Input
         elsif selection_length_count >= 0
           if selection_length_count - line.length < 0
             # selection ends in this line
-            right = line.measure_to(selection_length_count)
-            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(sc)
+            if draw
+              right = line.measure_to(selection_length_count)
+              rt.primitives << { x: 0, y: y + @padding - @content_y, w: right, h: selection_h }.solid!(sc)
+            end
             selection_length_count = -1
           else
             # whole line is part of the selection
-            right = line.measure_to(line.length)
+            if draw
+              right = line.measure_to(line.length)
+              rt.primitives << { x: 0, y: y + @padding - @content_y, w: right, h: selection_h }.solid!(sc)
+            end
             selection_length_count -= line.length
-            rt.primitives << { x: 0, y: y + @padding, w: right, h: @font_height + @padding * 2 }.solid!(sc)
           end
         end
 
         # TEXT FOR LINE
-        rt.primitives << { x: 0, y: y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
-      end
-
-      # CURSOR LOCATION
-      line = @lines.line_at(@selection_end)
-      cursor_index = @selection_end - line.start
-      # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
-      if cursor_index == line.length && line.wrapped? && @lines.length > line.number
-        line = @lines[line.number + 1]
-        cursor_index = 0
-      end
-
-      @cursor_y = @content_h - (line.number + 1) * @font_height
-      if @content_h <= @h
-        @source_y = 0
-        @source_h = @content_h
-      elsif @ensure_cursor_visible
-        @source_h = @h
-        if @cursor_y + @font_height > @source_y + @source_h
-          @source_y = @cursor_y + @font_height - @source_h
-        elsif @cursor_y < @source_y
-          @source_y = @cursor_y
+        if draw
+          rt.primitives << { x: 0, y: y - @content_y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
         end
-      else
-        @source_y = @source_y.cap_min_max(0, @content_h - @h)
-        @source_h = @h
       end
 
-      @cursor_x = line.measure_to(cursor_index).lesser(@w)
       draw_cursor(rt)
-      @ensure_cursor_visible = false
     end
   end
 end
