@@ -36,11 +36,11 @@ module Input
       @font = params[:font].to_s
       @size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, :size_enum)
 
-      @word_chars = params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']
-      _, @font_height = $gtk.calcstringbox(@word_chars.join(''), @size_enum, @font)
-      @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
-      @crlf_chars = ["\r", "\n"]
-      @word_wrap_chars = @word_chars + @punctuation_chars
+      word_chars = (params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-'])
+      _, @font_height = $gtk.calcstringbox(word_chars.join(''), @size_enum, @font)
+      @word_chars = Hash[word_chars.map { [_1, true] }]
+      @punctuation_chars = Hash[(params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]).map { [_1, true] }]
+      @crlf_chars = { "\r" => true, "\n" => true }
 
       @padding = params[:padding] || 2
 
@@ -108,6 +108,8 @@ module Input
 
       @on_clicked = params[:on_clicked] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
+
+      @value_changed = true
     end
 
     def draw_override(ffi)
@@ -151,6 +153,7 @@ module Input
       @value = text
       @selection_start = @selection_start.lesser(@value.length)
       @selection_end = @selection_end.lesser(@value.length)
+      @value_changed = true
     end
 
     def selection_start=(index)
@@ -206,6 +209,7 @@ module Input
         @value = @value[0, @selection_end] + @value[@selection_start, @value.length]
         @selection_start = @selection_end
       end
+      @value_changed = true
     end
 
     def select_word_left
@@ -268,11 +272,11 @@ module Input
       copy
       @value = @value[0, @selection_start.lesser(@selection_end)] + @value[@selection_end.greater(@selection_start), @value.length]
       @selection_start = @selection_end = @selection_start.lesser(@selection_end)
+      @value_changed = true
     end
 
     def paste
-      @value = @value[0, @selection_start.lesser(@selection_end)] + $clipboard + @value[@selection_end.greater(@selection_start), @value.length]
-      @selection_start = @selection_end = @selection_start.lesser(@selection_end) + $clipboard.length
+      insert($clipboard)
     end
 
     def prepare_special_keys
@@ -305,6 +309,7 @@ module Input
         @selection_start = @selection_end + str.length
       end
       @selection_end = @selection_start
+      @value_changed = true
     end
     alias replace insert
 

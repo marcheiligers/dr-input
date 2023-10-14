@@ -1,3 +1,10 @@
+# v0.0.7 - 14 October 2023
+
+* Multiline Performance
+  * Draw only the lines in the view
+  * Speed up word break finding with Hashes
+  * Update edits to use data model instead or reparsing entire value
+
 # v0.0.6 - 10 September 2023
 
 * Added `rect` method

@@ -5,7 +5,10 @@ module Input
     def initialize(**params)
       super
 
-      @word_wrap_chars = @word_chars + @punctuation_chars
+      word_wrap_chars = @word_chars.merge(@punctuation_chars)
+      @line_parser = LineParser.new(word_wrap_chars, @crlf_chars, @font, @size_enum)
+      @lines = @line_parser.perform_word_wrap(@value, @w)
+      @ensure_cursor_visible = true
     end
 
     def draw_override(ffi)
@@ -32,10 +35,11 @@ module Input
 
     def handle_keyboard
       text_keys = $args.inputs.text
-# Home is Cmd + ↑ / Fn + ←
-# End is Cmd + ↓ / Fn + →
-# PageUp is Fn + ↑
-# PageDown is Fn + ↓
+      # On a Mac:
+      # Home is Cmd + ↑ / Fn + ←
+      # End is Cmd + ↓ / Fn + →
+      # PageUp is Fn + ↑
+      # PageDown is Fn + ↓
       if @meta || @ctrl
         # TODO: undo/redo
         if @down_keys.include?(:a)
@@ -231,11 +235,10 @@ module Input
 
     # TODO: Word selection (double click), All selection (triple click)
     def handle_mouse
-      return
       mouse = $args.inputs.mouse
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      relative_y = @content_h - (mouse.y - @y + @content_y)
+      relative_y = @scroll_h - (mouse.y - @y + @content_y)
       line = @lines[relative_y.idiv(@font_height).cap_min_max(0, @lines.length - 1)]
       index = line.index_at(mouse.x - @x + @content_x)
 
@@ -257,88 +260,62 @@ module Input
       @ensure_cursor_visible = true
     end
 
-    def find_word_breaks(value = @value)
-      # @word_chars = params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']
-      # _, @font_height = $gtk.calcstringbox(@word_chars.join(''), @size_enum, @font)
-      # @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
-      # @crlf_chars = ["\r", "\n"]
-      # @word_wrap_chars = @word_chars + @punctuation_chars
-      words = []
-      word = ''
-      index = -1
-      length = value.length
-      mode = :leading_white_space
-
-      while (index += 1) < length # mode = find a word-like thing
-        case mode
-        when :leading_white_space
-          if value[index].strip == '' # leading white-space
-            if @crlf_chars.include?(value[index]) # TODO: prolly need to replace \r\n with \n up front
-              words << word
-              word = "\n"
-            else
-              word << value[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
-            end
-          else
-            word << value[index]
-            mode = :word_wrap_chars
-          end
-        when :word_wrap_chars # TODO: consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
-          if @word_wrap_chars.include?(value[index])
-            word << value[index]
-          elsif @crlf_chars.include?(value[index])
-            words << word
-            word = "\n"
-            mode = :leading_white_space
-          else
-            word << value[index]
-            mode = :trailing_white_space
-          end
-        when :trailing_white_space
-          if value[index].strip == '' # trailing white-space
-            if @crlf_chars.include?(value[index])
-              words << word
-              word = "\n" # converting all new line chars to \n
-              mode = :leading_white_space
-            else
-              word << value[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
-            end
-          else
-            words << word
-            word = value[index]
-            mode = :word_wrap_chars
-          end
-        end
-      end
-
-      words << word
+    def value=(text)
+      @value = text
+      @selection_start = @selection_start.lesser(@value.length)
+      @selection_end = @selection_end.lesser(@value.length)
+      @lines = @line_parser.perform_word_wrap(@value, @w)
+      @value_changed = false
     end
 
-    def perform_word_wrap(words = find_word_breaks)
-      lines = LineCollection.new(@font, @size_enum)
-      line = ''
-      i = -1
-      l = words.length
-      while (i += 1) < l
-        word = words[i]
-        if word == "\n"
-          lines << line
-          line = word
-        else
-          width, = $gtk.calcstringbox((line + word).rstrip, @size_enum, @font)
-          if width > @w
-            lines.append(line, true)
-            line = word
-          elsif word.start_with?("\n")
-            lines << line
-            line = word
-          else
-            line << word
-          end
-        end
-      end
+    def insert(str)
+      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+      @value = @value[0, @selection_start].to_s + str + @value[@selection_start, @value.length].to_s # TODO: remove @value
 
-      lines << line
+      modified_lines = @lines.modified(@selection_start, @selection_end)
+      original_value = modified_lines.text
+      first_modified_line = modified_lines.first
+      original_index = first_modified_line.start
+      modified_value = original_value[0, @selection_start - original_index].to_s + str + original_value[@selection_end - original_index, original_value.length].to_s
+      new_lines = @line_parser.perform_word_wrap(modified_value, @w, first_modified_line.number, original_index)
+
+      @lines.replace(modified_lines, new_lines)
+
+      @selection_start += str.length
+      @selection_end = @selection_start
+    end
+    alias replace insert
+
+    def cut
+      copy
+      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+
+      @value = @value[0, @selection_start] + @value[@selection_end, @value.length] # TODO: remove @value
+
+      delete_selection
+    end
+
+    def delete_selection
+      modified_lines = @lines.modified(@selection_start, @selection_end)
+      original_value = modified_lines.text
+      first_modified_line = modified_lines.first
+      original_index = first_modified_line.start
+      modified_value = original_value[0, @selection_start - original_index].to_s + original_value[@selection_end - original_index, original_value.length].to_s
+      new_lines = @line_parser.perform_word_wrap(modified_value, @w, first_modified_line.number, original_index)
+
+      @lines.replace(modified_lines, new_lines)
+
+      @selection_end = @selection_start
+    end
+
+    def delete_back
+      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+      @selection_start -= 1 if @selection_start == @selection_end
+
+      @value = @value[0, @selection_start] + @value[@selection_end, @value.length] # TODO: remove @value
+
+      delete_selection
+      @selection_end = @selection_start
     end
 
     # @scroll_w - The `scroll_w` read-only property is a measurement of the width of an element's content,
@@ -361,8 +338,6 @@ module Input
         bg = @blurred_background_color
         sc = @blurred_selection_color
       end
-
-      @lines = perform_word_wrap
 
       # TODO: Implement line spacing
       @scroll_w = @content_w = @w
@@ -398,10 +373,6 @@ module Input
       end
       @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
       @ensure_cursor_visible = false
-
-
-      # putz @value.gsub("\n", '\n')
-      # putz lines
 
       if @selection_start != @selection_end
         selection_start_count = @selection_start.lesser(@selection_end)
