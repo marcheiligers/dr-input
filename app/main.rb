@@ -82,7 +82,7 @@ def tick(args)
       x: 20,
       y: 220,
       w: 1200,
-      h: 400,
+      h: 420,
       value: ALICE_IN_WONDERLAND,
       font: FONT,
       size_enum: :xxxlarge,

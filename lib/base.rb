@@ -270,9 +270,7 @@ module Input
 
     def cut
       copy
-      @value = @value[0, @selection_start.lesser(@selection_end)] + @value[@selection_end.greater(@selection_start), @value.length]
-      @selection_start = @selection_end = @selection_start.lesser(@selection_end)
-      @value_changed = true
+      insert('')
     end
 
     def paste

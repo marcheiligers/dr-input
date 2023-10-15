@@ -3,11 +3,14 @@ module Input
     attr_reader :lines
 
     def initialize(**params)
+      value = params[:value]
+      params[:value] = nil
+
       super
 
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
       @line_parser = LineParser.new(word_wrap_chars, @crlf_chars, @font, @size_enum)
-      @lines = @line_parser.perform_word_wrap(@value, @w)
+      @lines = @line_parser.perform_word_wrap(value, @w)
       @ensure_cursor_visible = true
     end
 
@@ -260,17 +263,18 @@ module Input
       @ensure_cursor_visible = true
     end
 
+    def value
+      @lines.text
+    end
+
     def value=(text)
-      @value = text
-      @selection_start = @selection_start.lesser(@value.length)
-      @selection_end = @selection_end.lesser(@value.length)
-      @lines = @line_parser.perform_word_wrap(@value, @w)
-      @value_changed = false
+      @lines = @line_parser.perform_word_wrap(text, @w)
+      @selection_start = @selection_start.lesser(text.length)
+      @selection_end = @selection_end.lesser(text.length)
     end
 
     def insert(str)
       @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
-      @value = @value[0, @selection_start].to_s + str + @value[@selection_start, @value.length].to_s # TODO: remove @value
 
       modified_lines = @lines.modified(@selection_start, @selection_end)
       original_value = modified_lines.text
@@ -286,36 +290,129 @@ module Input
     end
     alias replace insert
 
-    def cut
-      copy
-      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+    def copy
+      return if @selection_start == @selection_end
 
-      @value = @value[0, @selection_start] + @value[@selection_end, @value.length] # TODO: remove @value
-
-      delete_selection
+      $clipboard = if @selection_start < @selection_end
+                     @lines.text[@selection_start, @selection_end - @selection_start]
+                   else
+                     @lines.text[@selection_end, @selection_start - @selection_end]
+                   end
     end
 
-    def delete_selection
-      modified_lines = @lines.modified(@selection_start, @selection_end)
-      original_value = modified_lines.text
-      first_modified_line = modified_lines.first
-      original_index = first_modified_line.start
-      modified_value = original_value[0, @selection_start - original_index].to_s + original_value[@selection_end - original_index, original_value.length].to_s
-      new_lines = @line_parser.perform_word_wrap(modified_value, @w, first_modified_line.number, original_index)
-
-      @lines.replace(modified_lines, new_lines)
-
-      @selection_end = @selection_start
+    def cut
+      copy
+      insert('')
     end
 
     def delete_back
-      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
       @selection_start -= 1 if @selection_start == @selection_end
+      insert('')
+    end
 
-      @value = @value[0, @selection_start] + @value[@selection_end, @value.length] # TODO: remove @value
+    def select_all
+      @selection_start = 0
+      @selection_end = @lines.last.end
+    end
 
-      delete_selection
-      @selection_end = @selection_start
+    def select_to_end
+      @selection_end = @lines.last.end
+    end
+
+    def move_to_end
+      @selection_start = @selection_end = @lines.last.end
+    end
+
+    def select_char_right
+      @selection_end = (@selection_end + 1).lesser(@lines.last.end)
+    end
+
+    def move_char_right
+      @selection_end = if @selection_end > @selection_start
+                         @selection_end
+                       elsif @selection_end < @selection_start
+                         @selection_start
+                       else
+                         (@selection_start + 1).lesser(@lines.last.end)
+                       end
+      @selection_start = @selection_end
+    end
+
+    def find(text)
+      index = @lines.text.index(text)
+      return unless index
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def current_selection
+      return nil if @selection_start == @selection_end
+
+      if @selection_start < @selection_end
+        @lines.text[@selection_start, @selection_end - @selection_start]
+      else
+        @lines.text[@selection_end, @selection_start - @selection_end]
+      end
+    end
+
+    def find_next
+      text = current_selection
+      return if text.nil?
+
+      value = @lines.text
+      index = value.index(text, @selection_end.greater(@selection_start)) || value.index(text)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def find_prev
+      text = current_selection
+      return if text.nil?
+
+      value = @lines.text
+      index = value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || value.rindex(text, value.length)
+
+      @selection_start = index
+      @selection_end = index + text.length
+    end
+
+    def find_word_break_left
+      return 0 if @selection_end == 0
+
+      index = @selection_end
+      value = @lines.text
+
+      loop do
+        index -= 1
+        return 0 if index == 0
+        break if @word_chars.include?(value[index, 1])
+      end
+
+      loop do
+        index -= 1
+        return 0 if index == 0
+        return index + 1 unless @word_chars.include?(value[index, 1])
+      end
+    end
+
+    def find_word_break_right(index = @selection_end)
+      value = @lines.text
+      length = value.length
+      return length if index == length
+
+      loop do
+        index += 1
+        return length if index == length
+        break if @word_chars.include?(value[index, 1])
+      end
+
+      loop do
+        index += 1
+        return length if index == length
+        return index unless @word_chars.include?(value[index, 1])
+      end
     end
 
     # @scroll_w - The `scroll_w` read-only property is a measurement of the width of an element's content,
@@ -371,73 +468,33 @@ module Input
       else
         @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
       end
+      # TODO: Ensure cursor_x doesn't go past the line width
       @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
       @ensure_cursor_visible = false
 
-      if @selection_start != @selection_end
-        selection_start_count = @selection_start.lesser(@selection_end)
-        selection_length_count = @selection_end.greater(@selection_start) - selection_start_count
-      else
-        selection_start_count = -1
-        selection_length_count = -1
-      end
+      selection_start = @selection_start.lesser(@selection_end)
+      selection_end = @selection_start.greater(@selection_end)
+      selection_visible = selection_start != selection_end
 
       content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
       content_top = @content_y + @content_h # internal use only, used for draw
       selection_h = @font_height + @padding * 2
 
-      @lines.each_with_index do |line, i| # rubocop:disable Metrics/BlockLength
+      i = (scroll_h - content_top).idiv(@font_height).greater(0) - 1
+      l = (scroll_h - content_bottom).idiv(@font_height).lesser(@lines.length)
+      while (i += 1) < l
+        line = @lines[i]
         y = @scroll_h - @padding - (i + 1) * @font_height
-        draw = y > content_bottom && y < content_top # Only draw things in the view
 
         # SELECTION
-        # TODO: Ensure cursor_x doesn't go past the line width
-        if selection_start_count >= 0
-          if selection_start_count - line.length < 0
-            # selection starts here
-            line_chars_left = line.length - selection_start_count
-            left = line.measure_to(selection_start_count)
-            if selection_length_count - line_chars_left < 0
-              # whole selection on this line
-              if draw
-                right = line.measure_to(selection_start_count + selection_length_count)
-                rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
-              end
-              selection_length_count = -1
-            else
-              # selection to end of line and continues
-              if draw
-                right = line.measure_to(line.length)
-                rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
-              end
-              selection_length_count -= line_chars_left
-            end
-            selection_start_count = -1
-          else
-            selection_start_count -= line.length
-          end
-        elsif selection_length_count >= 0
-          if selection_length_count - line.length < 0
-            # selection ends in this line
-            if draw
-              right = line.measure_to(selection_length_count)
-              rt.primitives << { x: 0, y: y + @padding - @content_y, w: right, h: selection_h }.solid!(sc)
-            end
-            selection_length_count = -1
-          else
-            # whole line is part of the selection
-            if draw
-              right = line.measure_to(line.length)
-              rt.primitives << { x: 0, y: y + @padding - @content_y, w: right, h: selection_h }.solid!(sc)
-            end
-            selection_length_count -= line.length
-          end
+        if selection_visible && selection_start <= line.end && selection_end >= line.start
+          left = line.measure_to((selection_start - line.start).greater(0))
+          right = line.measure_to((selection_end - line.start).lesser(line.length))
+          rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
         end
 
         # TEXT FOR LINE
-        if draw
-          rt.primitives << { x: 0, y: y - @content_y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
-        end
+        rt.primitives << { x: 0, y: y - @content_y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
       end
 
       draw_cursor(rt)

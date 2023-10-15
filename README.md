@@ -2,6 +2,8 @@
 
 A simple input control for DragonRuby.
 
+The Multiline input is fast enough to edit _Alice's Adventures in Wonderland_ (~170k character), but _War and Peace_ (~3.3M characters) is over the limits. This limit doesn't appear to be related to the code, as even loading the _War and Peace_ text file takes multiple seconds (M1 Pro Max). I have not explored where the limit is beyond a simple experiment with these two files from [Project Gutenberg](https://www.gutenberg.org), but if you need to edit a reasonable sized novel, perhaps a chapter-based approach is better anyway.
+
 ## Usage
 
 ```ruby
@@ -115,6 +117,6 @@ See `app/main.rb` for a more complex example.
 ## Thanks
 
 * @danhealy for Zif. The Zif Input was the starting point for this. Though you wouldn't be able to tell now, it was a really solid place to start.
-* @leviondiscord (on Discord, aka @leviongithub) for suggesting `#delete_prefix` when I would have done something much dumber. And also providing other interesting methods I'm likely to use at some point
+* @leviondiscord (on Discord, aka @leviongithub) for suggesting `#delete_prefix` when I would have done something much dumber. And also providing other interesting methods I'm likely to use at some point.
 * @DarkGriffin (on Discord) for requesting this control in the first place, and not being shy about the _crazy_ desired feature list (of which, I feel like, I've only touched the surface).
 * @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
