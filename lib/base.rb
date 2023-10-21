@@ -20,16 +20,16 @@ module Input
     NOOP = -> {}
 
     # BUG: Modifier keys are broken on the web ()
-    META_KEYS = %i[meta_left meta_right meta]
-    SHIFT_KEYS = %i[shift_left shift_right shift]
-    ALT_KEYS = %i[alt_left alt_right alt]
-    CTRL_KEYS = %i[control_left control_right control]
-    DEL_KEYS = %i[delete backspace]
-    IGNORE_KEYS = %i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS
+    META_KEYS = %i[meta_left meta_right meta].freeze
+    SHIFT_KEYS = %i[shift_left shift_right shift].freeze
+    ALT_KEYS = %i[alt_left alt_right alt].freeze
+    CTRL_KEYS = %i[control_left control_right control].freeze
+    DEL_KEYS = %i[delete backspace].freeze
+    IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
 
     @@id = 0
 
-    def initialize(**params)
+    def initialize(**params) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       @x = params[:x] || 0
       @y = params[:y] || 0
 
@@ -112,13 +112,11 @@ module Input
       @value_changed = true
     end
 
-    def draw_override(ffi)
-      if @will_focus
-        @will_focus = false
-        @focussed = true
-      end
+    def draw_override(_ffi)
+      return unless @will_focus
 
-      return unless @focussed
+      @will_focus = false
+      @focussed = true
     end
 
     def draw_cursor(rt)
@@ -137,7 +135,17 @@ module Input
                 255
               end
       # TODO: cursor size
-      rt.primitives << { x: (@cursor_x - 1).greater(0), y: @cursor_y - @padding - @content_y, w: @padding, h: @font_height + @padding * 2, r: 0, g: 0, b: 0, a: alpha }.solid!
+      # TODO: cursor color
+      rt.primitives << {
+        x: (@cursor_x - 1).greater(0),
+        y: @cursor_y - @padding - @content_y,
+        w: @padding,
+        h: @font_height + @padding * 2,
+        r: 0,
+        g: 0,
+        b: 0,
+        a: alpha
+      }.solid!
     end
 
     def tick
@@ -197,7 +205,7 @@ module Input
       @selection_start = @selection_end = @value.length
     end
 
-    def delete_back
+    def delete_back # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       if @selection_start == @selection_end
         @value = @value[0, @selection_start - 1].to_s + @value[@selection_start, @value.length]
         @selection_start = (@selection_start - 1).greater(0)
@@ -277,7 +285,7 @@ module Input
       insert($clipboard)
     end
 
-    def prepare_special_keys
+    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       keyboard = $args.inputs.keyboard
 
       tick_count = $args.tick_count
@@ -295,7 +303,7 @@ module Input
       @ctrl = (special_keys & CTRL_KEYS).any?
     end
 
-    def insert(str)
+    def insert(str) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       if @selection_start == @selection_end
         @value = @value[0, @selection_start].to_s + str + @value[@selection_start, @value.length].to_s
         @selection_start += str.length
@@ -343,14 +351,15 @@ module Input
       text = current_selection
       return if text.nil?
 
-      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || @value.rindex(text, @value.length)
+      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) ||
+              @value.rindex(text, @value.length)
 
       @selection_start = index
       @selection_end = index + text.length
     end
 
     # TODO: Improve walking words
-    def find_word_break_left
+    def find_word_break_left # rubocop:disable Metrics/MethodLength
       return 0 if @selection_end == 0
 
       index = @selection_end
@@ -368,7 +377,7 @@ module Input
       end
     end
 
-    def find_word_break_right(index = @selection_end)
+    def find_word_break_right(index = @selection_end) # rubocop:disable Metrics/MethodLength
       length = @value.length
       return length if index == length
 
