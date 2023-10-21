@@ -11,7 +11,6 @@ module Input
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
       @line_parser = LineParser.new(word_wrap_chars, @crlf_chars, @font, @size_enum)
       @lines = @line_parser.perform_word_wrap(value, @w)
-      @ensure_cursor_visible = true
     end
 
     def draw_override(ffi)
@@ -33,7 +32,7 @@ module Input
         0, 0,
         0, 0, @content_w, @content_h
       )
-      super # handles focus and draws the cursor
+      super # handles focus
     end
 
     def handle_keyboard
@@ -470,7 +469,6 @@ module Input
       end
       # TODO: Ensure cursor_x doesn't go past the line width
       @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
-      @ensure_cursor_visible = false
 
       selection_start = @selection_start.lesser(@selection_end)
       selection_end = @selection_start.greater(@selection_end)

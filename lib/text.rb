@@ -1,8 +1,25 @@
 module Input
   class Text < Base
     def draw_override(ffi)
-      ffi.draw_sprite_3(@x, @y, @source_w, @h, @path, 0, 255, 255, 255, 255, nil, nil, nil, nil, false, false, 0, 0, @source_x, 0, @source_w, @h)
-      super # handles focus and draws the cursor
+      # The argument order for ffi_draw.draw_sprite_3 is:
+      # x, y, w, h,
+      # path,
+      # angle,
+      # alpha, red_saturation, green_saturation, blue_saturation
+      # tile_x, tile_y, tile_w, tile_h,
+      # flip_horizontally, flip_vertically,
+      # angle_anchor_x, angle_anchor_y,
+      # source_x, source_y, source_w, source_h
+      ffi.draw_sprite_3(
+        @x, @y, @content_w, @h,
+        @path,
+        0, 255, 255, 255, 255,
+        nil, nil, nil, nil,
+        false, false,
+        0, 0,
+        0, 0, @content_w, @content_h
+      )
+      super # handles focus
     end
 
     def handle_keyboard
@@ -12,18 +29,25 @@ module Input
         # TODO: undo/redo
         if @down_keys.include?(:a)
           select_all
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:c)
           copy
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:x)
           cut
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
           paste
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           @shift ? select_to_start : move_to_start
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:right)
           @shift ? select_to_end : move_to_end
+          @ensure_cursor_visible = true
         elsif @down_keys.include?(:g)
           @shift ? find_prev : find_next
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
@@ -34,60 +58,72 @@ module Input
         elsif @down_keys.include?(:left)
           if @shift
             @alt ? select_word_left : select_char_left
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_left : move_char_left
+            @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:right)
           if @shift
             @alt ? select_word_right : select_char_right
+            @ensure_cursor_visible = true
           else
             @alt ? move_word_right : move_char_right
+            @ensure_cursor_visible = true
           end
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
         insert(text_keys.join(''))
+        @ensure_cursor_visible = true
       end
     end
 
     # TODO: Word selection (double click), All selection (triple click)
     def handle_mouse
       mouse = $args.inputs.mouse
+      return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      if !@mouse_down && mouse.down && mouse.inside_rect?(self)
+      if @mouse_down # draggin
+        index = find_index_at_x(mouse.x - @x + @content_x) # TODO: handle scrolling to the right with mouse
+        @selection_end = index
+        @mouse_down = false if mouse.up
+      else
         @on_clicked.call(mouse, self)
         return unless @focussed || @will_focus
 
         @mouse_down = true
 
-        index = find_index_at_x(mouse.x - @x + @source_x)
+        index = find_index_at_x(mouse.x - @x + @content_x)
         if @shift
           @selection_end = index
         else
           @selection_start = @selection_end = index
         end
-      elsif @mouse_down
-        index = find_index_at_x(mouse.x - @x + @source_x) # TODO: handle scrolling to the right with mouse
-        @selection_end = index
-        @mouse_down = false if mouse.up
       end
+
+      @ensure_cursor_visible = true
     end
 
-    def find_index_at_x(x, str = @value)
+    def find_index_at_x(x, str = @value) # rubocop:disable Metrics/MethodLength
       return 0 if x < @padding
 
-      index = -1
-      width = 0
-      while (index += 1) < str.length
-        char_w = $gtk.calcstringbox(str[index, 1].to_s, @size_enum, @font)[0]
-        return index if width + char_w / 2 > x
-        return index + 1 if width + char_w > x
+      l = 0
+      r = @value.length - 1
+      loop do
+        return l if l > r
 
-        width += char_w
+        m = ((l + r) / 2).floor
+        px = $gtk.calcstringbox(str[0, m].to_s, @size_enum, @font)[0]
+        if px == x
+          return m
+        elsif px < x
+          l = m + 1
+        else
+          r = m - 1
+        end
       end
-
-      index
     end
 
     def prepare_render_target
@@ -100,48 +136,52 @@ module Input
         sc = @blurred_selection_color
       end
 
-      @content_w = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
+      @scroll_w = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
+      @content_w = @w.lesser(@scroll_w)
+      @scroll_h = @content_h = @h
+
       rt = $args.outputs[@path]
       rt.w = @content_w
-      rt.h = @h
+      rt.h = @content_h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
+      # CURSOR AND SCROLL LOCATION
+      @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
+      @cursor_y = 0
+
+      if @content_w < @w
+        @content_x = 0
+      elsif @ensure_cursor_visible
+        if @cursor_x > @content_x + @content_w
+          @content_x = @cursor_x - @content_w
+        elsif @cursor_x < @content_x
+          @content_x = @cursor_x
+        end
+      else
+        @content_x = @content_x.cap_min_max(0, @scroll_w - @w)
+      end
+
       # SELECTION
       if @selection_start != @selection_end
         if @selection_start < @selection_end
-          left, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)
-          right, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)
+          left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+          right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
         elsif @selection_start > @selection_end
-          left, = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)
-          right, = $gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)
+          left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+          right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
         end
 
         rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
       end
 
       # TEXT
-      rt.primitives << { x: 0, y: @padding, text: @value, size_enum: @size_enum, font: @font }.label!(@text_color)
+      f = find_index_at_x(@content_x)
+      l = find_index_at_x(@content_x + @content_w) + 2
+      rt.primitives << { x: 0, y: @padding, text: @value[f, l - f], size_enum: @size_enum, font: @font }.label!(@text_color)
 
-      # CURSOR LOCATION
-      @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
-      @cursor_y = 0
       draw_cursor(rt)
-
-      @source_w = @content_w < @w ? @content_w : @w
-      if @source_w < @w
-        @source_x = 0
-      else
-        relative_cursor_x = cursor_x - @source_x
-        if relative_cursor_x <= 0
-          @source_x = @cursor_x.greater(0)
-        elsif relative_cursor_x > @w
-          @source_x = (@cursor_x - @w).lesser(@content_w - @w)
-        end
-      end
-
-      @source_x = @content_w - @w if @content_w - @source_x < @w && @content_w > @w
     end
   end
 end

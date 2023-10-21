@@ -79,6 +79,7 @@ module Input
       # To manage the flashing cursor
       @cursor_ticks = 0
       @cursor_dir = 1
+      @ensure_cursor_visible = true
 
       @key_repeat_delay = params[:key_repeat_delay] = 20
       @key_repeat_debounce = params[:key_repeat_debounce] = 5
@@ -117,6 +118,7 @@ module Input
 
       @will_focus = false
       @focussed = true
+      @ensure_cursor_visible = true
     end
 
     def draw_cursor(rt)
@@ -137,7 +139,7 @@ module Input
       # TODO: cursor size
       # TODO: cursor color
       rt.primitives << {
-        x: (@cursor_x - 1).greater(0),
+        x: (@cursor_x - 1).greater(0) - @content_x,
         y: @cursor_y - @padding - @content_y,
         w: @padding,
         h: @font_height + @padding * 2,
