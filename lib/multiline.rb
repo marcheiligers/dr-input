@@ -238,6 +238,12 @@ module Input
     # TODO: Word selection (double click), All selection (triple click)
     def handle_mouse
       mouse = $args.inputs.mouse
+
+      if mouse.wheel && mouse.inside_rect?(self)
+        @content_y += mouse.wheel.y * @mouse_wheel_speed
+        @ensure_cursor_visible = false
+      end
+
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
       relative_y = @scroll_h - (mouse.y - @y + @content_y)
