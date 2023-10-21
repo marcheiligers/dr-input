@@ -81,8 +81,8 @@ module Input
       @cursor_dir = 1
       @ensure_cursor_visible = true
 
-      @key_repeat_delay = params[:key_repeat_delay] = 20
-      @key_repeat_debounce = params[:key_repeat_debounce] = 5
+      @key_repeat_delay = params[:key_repeat_delay] || 20
+      @key_repeat_debounce = params[:key_repeat_debounce] || 4
 
       # Mouse focus for seletion
       @mouse_down = false
