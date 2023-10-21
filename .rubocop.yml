@@ -17,6 +17,7 @@ Naming/MethodParameterName:
     - 'y'
     - w
     - h
+    - rt
 
 Style/FrozenStringLiteralComment:
   Enabled: false

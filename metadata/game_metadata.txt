@@ -20,7 +20,7 @@ scale_quality=2
 # packageid=org.dev.gamename
 
 # Setting this property to true will enable High DPI rendering (try in combination with scale_quality to see what looks best)
-# highdpi=false
+highdpi=true
 
 # === Portrait Mode ===
 # The orientation can be set to either landscape (1280x720) or portrait (720x1280)
@@ -31,7 +31,7 @@ scale_quality=2
 # HD Mode: when enabled, will give you 720p, 1080p, 1440p, 4k, and 5k rendering options
 # Check out the following YouTube Video for a demo of DragonRuby's HD Capabilities
 # https://youtu.be/Rnc6z84zaa4
-# hd=false
+hd=true
 
 # === Texture Atlases ===
 

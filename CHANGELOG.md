@@ -1,3 +1,14 @@
+# v0.0.7 - 21 October 2023
+
+* Multiline Performance
+  * Draw only the lines in the view
+  * Speed up word break finding with Hashes
+  * Update edits to use data model instead or reparsing entire value
+* Text Performance
+  * Draw text in the view
+  * Change `find_index_at_x` to use Binary search
+* Speed up key repeat slight (4 ticks instead of 5 default)
+
 # v0.0.6 - 10 September 2023
 
 * Added `rect` method

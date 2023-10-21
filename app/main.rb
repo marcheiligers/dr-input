@@ -1,4 +1,5 @@
 require 'lib/input.rb'
+require 'tests/alice_in_wonderland.rb'
 
 # FONT = ''
 # FONT = 'fonts/Victorian Parlor_By Burntilldead_Free/Victorian Parlor Vintage Alternate_free.ttf'
@@ -45,7 +46,7 @@ class Scroller
     if @multiline.content_h < @h
       { x: @x, y: @y, w: @w, h: @h }
     else
-      { x: @x, y: (@multiline.source_y / @multiline.content_h) * @h + @y, w: @w, h: (@h / @multiline.content_h) * @h }
+      { x: @x, y: (@multiline.content_y / @multiline.scroll_h) * @h + @y, w: @w, h: (@h / @multiline.scroll_h) * @h }
     end
   end
 
@@ -61,7 +62,7 @@ def tick(args)
       x: 20,
       y: 660,
       w: 1240,
-      value: 'this is a text input field',
+      value: "Alice's Adventures in Wonderland",
       font: FONT,
       size_enum: :xxxlarge,
       background_color: [220, 220, 220],
@@ -81,10 +82,11 @@ def tick(args)
       x: 20,
       y: 220,
       w: 1200,
-      h: 400,
-      value: 'this is a multiline input field',
+      h: 420,
+      value: ALICE_IN_WONDERLAND,
       font: FONT,
       size_enum: :xxxlarge,
+      selection_start: 0,
       background_color: [220, 220, 220],
       blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
@@ -118,9 +120,10 @@ def tick(args)
   nval = "#{nval[0, args.state.text.selection_end]}|#{nval[args.state.text.selection_end, nval.length]}"
   wval = args.state.multiline.value
   wval = "#{wval[0, args.state.multiline.selection_end]}|#{wval[args.state.multiline.selection_end, wval.length]}"
-  args.outputs.primitives << { y: 130, text: "Simple Value: #{nval}" }.label!(DEBUG_LABEL)
-  args.outputs.primitives << { y: 100, text: "Wrapping Value: #{wval.gsub("\n", '\n')}" }.label!(DEBUG_LABEL)
-  args.outputs.primitives << { y: 80, text: "Selection: #{args.state.multiline.selection_start}, #{args.state.multiline.selection_end}" }.label!(DEBUG_LABEL)
-  args.outputs.primitives << { y: 60, text: "Current line: #{args.state.multiline.current_line.inspect}" }.label!(DEBUG_LABEL)
-  args.outputs.primitives << { y: 30, text: "Clipboard: #{$clipboard}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 140, text: "Simple Value: #{nval}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 110, text: "Wrapping Value (#{wval.length}): #{wval.gsub("\n", '\n')}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 90, text: "Selection: #{args.state.multiline.selection_start}, #{args.state.multiline.selection_end}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 70, text: "Current line: #{args.state.multiline.current_line.inspect}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 40, text: "Clipboard: #{$clipboard}" }.label!(DEBUG_LABEL)
+  args.outputs.primitives << { y: 20, text: "Content rect: #{args.state.multiline.content_rect}, Scroll rect: #{args.state.multiline.scroll_rect}" }.label!(DEBUG_LABEL)
 end

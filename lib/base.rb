@@ -1,7 +1,9 @@
 module Input
   class Base
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y
+    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
+                :content_x, :content_y, :content_w, :content_h,
+                :scroll_x, :scroll_y, :scroll_w, :scroll_h
 
     SIZE_ENUM = {
       small: -1,
@@ -18,27 +20,27 @@ module Input
     NOOP = -> {}
 
     # BUG: Modifier keys are broken on the web ()
-    META_KEYS = %i[meta_left meta_right meta]
-    SHIFT_KEYS = %i[shift_left shift_right shift]
-    ALT_KEYS = %i[alt_left alt_right alt]
-    CTRL_KEYS = %i[control_left control_right control]
-    DEL_KEYS = %i[delete backspace]
-    IGNORE_KEYS = %i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS
+    META_KEYS = %i[meta_left meta_right meta].freeze
+    SHIFT_KEYS = %i[shift_left shift_right shift].freeze
+    ALT_KEYS = %i[alt_left alt_right alt].freeze
+    CTRL_KEYS = %i[control_left control_right control].freeze
+    DEL_KEYS = %i[delete backspace].freeze
+    IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
 
     @@id = 0
 
-    def initialize(**params)
+    def initialize(**params) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       @x = params[:x] || 0
       @y = params[:y] || 0
 
       @font = params[:font].to_s
       @size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, :size_enum)
 
-      @word_chars = params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']
-      _, @font_height = $gtk.calcstringbox(@word_chars.join(''), @size_enum, @font)
-      @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
-      @crlf_chars = ["\r", "\n"]
-      @word_wrap_chars = @word_chars + @punctuation_chars
+      word_chars = (params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-'])
+      _, @font_height = $gtk.calcstringbox(word_chars.join(''), @size_enum, @font)
+      @word_chars = Hash[word_chars.map { [_1, true] }]
+      @punctuation_chars = Hash[(params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]).map { [_1, true] }]
+      @crlf_chars = { "\r" => true, "\n" => true }
 
       @padding = params[:padding] || 2
 
@@ -77,34 +79,47 @@ module Input
       # To manage the flashing cursor
       @cursor_ticks = 0
       @cursor_dir = 1
+      @ensure_cursor_visible = true
 
-      @key_repeat_delay = params[:key_repeat_delay] = 20
-      @key_repeat_debounce = params[:key_repeat_debounce] = 5
+      @key_repeat_delay = params[:key_repeat_delay] || 20
+      @key_repeat_debounce = params[:key_repeat_debounce] || 4
 
       # Mouse focus for seletion
       @mouse_down = false
+      @mouse_wheel_speed = params[:mouse_wheel_speed] || 10
 
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"
-      @source_x = 0
-      @source_y = 0
-      @source_w = @w
-      @source_h = @h
+      @source_x = 0 # TODO: remove, replaced by content_*
+      @source_y = 0 # TODO: remove, replaced by content_*
+      @source_w = @w # TODO: remove, replaced by content_*
+      @source_h = @h # TODO: remove, replaced by content_*
+
+      @content_x = 0
+      @content_y = 0
+      @content_w = @w
+      @content_h = @h
+
+      @scroll_x = 0
+      @scroll_y = 0
+      @scroll_w = @w
+      @scroll_h = @h
 
       @focussed = params[:focussed] || false
       @will_focus = false # Get the focus at the end of the tick
 
       @on_clicked = params[:on_clicked] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
+
+      @value_changed = true
     end
 
-    def draw_override(ffi)
-      if @will_focus
-        @will_focus = false
-        @focussed = true
-      end
+    def draw_override(_ffi)
+      return unless @will_focus
 
-      return unless @focussed
+      @will_focus = false
+      @focussed = true
+      @ensure_cursor_visible = true
     end
 
     def draw_cursor(rt)
@@ -123,8 +138,17 @@ module Input
                 255
               end
       # TODO: cursor size
-      rt.primitives << { x: (@cursor_x - 1).greater(0), y: @cursor_y - @padding, w: @padding, h: @font_height + @padding * 2, r: 0, g: 0, b: 0, a: alpha }.solid!
-      # ffi.draw_solid(@cursor_x, @cursor_y, @padding, @font_height + @padding * 2, 0, 0, 0, alpha)
+      # TODO: cursor color
+      rt.primitives << {
+        x: (@cursor_x - 1).greater(0) - @content_x,
+        y: @cursor_y - @padding - @content_y,
+        w: @padding,
+        h: @font_height + @padding * 2,
+        r: 0,
+        g: 0,
+        b: 0,
+        a: alpha
+      }.solid!
     end
 
     def tick
@@ -140,6 +164,7 @@ module Input
       @value = text
       @selection_start = @selection_start.lesser(@value.length)
       @selection_end = @selection_end.lesser(@value.length)
+      @value_changed = true
     end
 
     def selection_start=(index)
@@ -183,7 +208,7 @@ module Input
       @selection_start = @selection_end = @value.length
     end
 
-    def delete_back
+    def delete_back # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       if @selection_start == @selection_end
         @value = @value[0, @selection_start - 1].to_s + @value[@selection_start, @value.length]
         @selection_start = (@selection_start - 1).greater(0)
@@ -195,6 +220,7 @@ module Input
         @value = @value[0, @selection_end] + @value[@selection_start, @value.length]
         @selection_start = @selection_end
       end
+      @value_changed = true
     end
 
     def select_word_left
@@ -255,16 +281,14 @@ module Input
 
     def cut
       copy
-      @value = @value[0, @selection_start.lesser(@selection_end)] + @value[@selection_end.greater(@selection_start), @value.length]
-      @selection_start = @selection_end = @selection_start.lesser(@selection_end)
+      insert('')
     end
 
     def paste
-      @value = @value[0, @selection_start.lesser(@selection_end)] + $clipboard + @value[@selection_end.greater(@selection_start), @value.length]
-      @selection_start = @selection_end = @selection_start.lesser(@selection_end) + $clipboard.length
+      insert($clipboard)
     end
 
-    def prepare_special_keys
+    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       keyboard = $args.inputs.keyboard
 
       tick_count = $args.tick_count
@@ -282,7 +306,7 @@ module Input
       @ctrl = (special_keys & CTRL_KEYS).any?
     end
 
-    def insert(str)
+    def insert(str) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       if @selection_start == @selection_end
         @value = @value[0, @selection_start].to_s + str + @value[@selection_start, @value.length].to_s
         @selection_start += str.length
@@ -294,6 +318,7 @@ module Input
         @selection_start = @selection_end + str.length
       end
       @selection_end = @selection_start
+      @value_changed = true
     end
     alias replace insert
 
@@ -329,14 +354,15 @@ module Input
       text = current_selection
       return if text.nil?
 
-      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || @value.rindex(text, @value.length)
+      index = @value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) ||
+              @value.rindex(text, @value.length)
 
       @selection_start = index
       @selection_end = index + text.length
     end
 
     # TODO: Improve walking words
-    def find_word_break_left
+    def find_word_break_left # rubocop:disable Metrics/MethodLength
       return 0 if @selection_end == 0
 
       index = @selection_end
@@ -354,7 +380,7 @@ module Input
       end
     end
 
-    def find_word_break_right(index = @selection_end)
+    def find_word_break_right(index = @selection_end) # rubocop:disable Metrics/MethodLength
       length = @value.length
       return length if index == length
 
@@ -373,6 +399,14 @@ module Input
 
     def rect
       { x: @x, y: @y, w: @w, h: @h }
+    end
+
+    def content_rect
+      { x: @content_x, y: @content_y, w: @content_w, h: @content_h }
+    end
+
+    def scroll_rect
+      { x: @scroll_x, y: @scroll_y, w: @scroll_w, h: @scroll_h }
     end
   end
 end
