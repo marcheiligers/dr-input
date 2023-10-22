@@ -2,8 +2,9 @@ require 'lib/input.rb'
 require 'tests/alice_in_wonderland.rb'
 
 # FONT = ''
-# FONT = 'fonts/Victorian Parlor_By Burntilldead_Free/Victorian Parlor Vintage Alternate_free.ttf'
-FONT = 'fonts/day-roman/DAYROM__.ttf'.freeze
+FONT = 'fonts/Victorian Parlor_By Burntilldead_Free/Victorian Parlor Vintage Alternate_free.ttf'
+# FONT = 'fonts/day-roman/DAYROM__.ttf'.freeze
+# FONT = 'fonts/roboto/Roboto-Italic.ttf'.freeze
 DEBUG_LABEL = { x: 20, r: 80, size_enum: -2 }.freeze
 
 class Scroller
