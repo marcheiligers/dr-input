@@ -1,3 +1,7 @@
+# v0.0.8 - DD October 2023
+
+* Made `handle_mouse` and `on_clicked` smarter to handle right clicks
+
 # v0.0.7 - 21 October 2023
 
 * Multiline Performance

@@ -1,4 +1,5 @@
 # Initially based loosely on code from Zif
+require_relative 'value.rb'
 require_relative 'line_collection.rb'
 require_relative 'base.rb'
 require_relative 'text.rb'
@@ -6,7 +7,6 @@ require_relative 'multiline.rb'
 
 $clipboard = ''
 
-# TODO: Make right click available - example context menu
 # TODO: Switch clipboard to system clipboard when setclipboard is available
 # TODO: Drag selected text
 # TODO: Max length

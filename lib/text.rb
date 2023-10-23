@@ -1,5 +1,10 @@
 module Input
   class Text < Base
+    def initialize(**params)
+      @value = TextValue.new(params[:value] || '')
+      super
+    end
+
     def draw_override(ffi)
       # The argument order for ffi_draw.draw_sprite_3 is:
       # x, y, w, h,
@@ -81,7 +86,7 @@ module Input
     end
 
     # TODO: Word selection (double click), All selection (triple click)
-    def handle_mouse
+    def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       mouse = $args.inputs.mouse
 
       if mouse.wheel && mouse.inside_rect?(self)
@@ -92,8 +97,8 @@ module Input
 
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      if @mouse_down # draggin
-        index = find_index_at_x(mouse.x - @x + @content_x) # TODO: handle scrolling to the right with mouse
+      if @mouse_down # dragging
+        index = find_index_at_x(mouse.x - @x + @content_x)
         @selection_end = index
         @mouse_down = false if mouse.up
       else
@@ -143,7 +148,7 @@ module Input
         sc = @blurred_selection_color
       end
 
-      @scroll_w = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
+      @scroll_w = $gtk.calcstringbox(@value.text, @size_enum, @font)[0].ceil
       @content_w = @w.lesser(@scroll_w)
       @scroll_h = @content_h = @h
 
