@@ -1,4 +1,4 @@
-# v0.0.8 - DD October 2023
+# v0.0.8 - 29 October 2023
 
 * Made `handle_mouse` and `on_clicked` smarter to handle right clicks
 * Fixed "EXCEPTION: wrong number of arguments (2 for 0)" for `NOOP`
