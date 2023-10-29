@@ -17,7 +17,7 @@ module Input
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
 
-    NOOP = -> {}
+    NOOP = ->(*_args) {}
 
     # BUG: Modifier keys are broken on the web ()
     META_KEYS = %i[meta_left meta_right meta].freeze
@@ -56,6 +56,15 @@ module Input
       }
       @background_color = params[:background_color]
       @blurred_background_color = params[:blurred_background_color] || @background_color
+
+      @prompt = params[:prompt] || ''
+      @prompt_color = {
+        r: params[:prompt_r] || 128,
+        g: params[:prompt_g] || 128,
+        b: params[:prompt_b] || 128,
+        a: params[:prompt_a] || 255,
+        vertical_alignment_enum: 0
+      }
 
       @max_length = params[:max_length] || false
 
@@ -169,6 +178,7 @@ module Input
     end
 
     def value=(text)
+      text = text[0, @max_length] if @max_length
       @value.replace(text)
       @selection_start = @selection_start.lesser(text.length)
       @selection_end = @selection_end.lesser(text.length)
@@ -184,6 +194,10 @@ module Input
 
     def insert(str)
       @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+      if @max_length && @value.length - (@selection_end - @selection_start) + str.length > @max_length
+        str = str[0, @max_length - @value.length + (@selection_end - @selection_start) - str.length]
+        return if str.nil? # too long
+      end
 
       @value.insert(@selection_start, @selection_end, str)
 
@@ -208,6 +222,12 @@ module Input
       else
         @value[@selection_end, @selection_start - @selection_end]
       end
+    end
+
+    def current_word
+      left = @word_chars.include?(@value[@selection_end - 1, 1]) ? find_word_break_left : @selection_end
+      right = @word_chars.include?(@value[@selection_end, 1]) ? find_word_break_right : @selection_end
+      @value[left, right - left]
     end
 
     def find_next

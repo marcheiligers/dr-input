@@ -6,8 +6,16 @@ module Input
       @text = text
     end
 
+    def to_s
+      @text
+    end
+
     def length
       @text.length
+    end
+
+    def empty?
+      @text.empty?
     end
 
     def insert(from, to, text)
@@ -41,12 +49,16 @@ module Input
       @lines = @line_parser.perform_word_wrap(text, @w)
     end
 
-    def text
+    def to_s
       @lines.text
     end
 
     def length
       @lines.last.end
+    end
+
+    def empty?
+      @lines.last.end == 0
     end
 
     def insert(from, to, text) # rubocop:disable Metrics/AbcSize

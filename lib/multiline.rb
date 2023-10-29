@@ -22,13 +22,13 @@ module Input
       # angle_anchor_x, angle_anchor_y,
       # source_x, source_y, source_w, source_h
       ffi.draw_sprite_3(
-        @x, @y + @h - @content_h, @content_w, @content_h,
+        @x, @y, @w, @h,
         @path, 0,
         255, 255, 255, 255,
         nil, nil, nil, nil,
         false, false,
         0, 0,
-        0, 0, @content_w, @content_h
+        0, 0, @w, @h
       )
       super # handles focus
     end
@@ -293,60 +293,72 @@ module Input
       @scroll_w = @content_w = @w
       @scroll_h = lines.length * @font_height + 2 * @padding
       @content_h = @h.lesser(@scroll_h)
+
       rt = $args.outputs[@path]
-      rt.w = @content_w
-      rt.h = @content_h
+      rt.w = @w
+      rt.h = @h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
-      # CURSOR AND SCROLL LOCATION
-      @cursor_line = lines.line_at(@selection_end)
-      @cursor_index = @selection_end - @cursor_line.start
-      # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
-      if @cursor_index == @cursor_line.length && @cursor_line.wrapped? && lines.length > @cursor_line.number
-        @cursor_line = lines[@cursor_line.number + 1]
-        @cursor_index = 0
-      end
-
-      @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
-      if @scroll_h <= @h # total height is less than height of the control
-        @content_y = 0
-      elsif @ensure_cursor_visible
-        if @cursor_y + @font_height > @content_y + @content_h
-          @content_y = @cursor_y + @font_height - @content_h
-        elsif @cursor_y < @content_y
-          @content_y = @cursor_y
-        end
+      if @value.empty?
+        @cursor_line = 0
+        @cursor_x = 0
+        @cursor_y = @h - @font_height
+        @content_x = 0
+        rt.primitives << { x: 0, y: @h - @font_height, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
       else
-        @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
-      end
-      # TODO: Ensure cursor_x doesn't go past the line width
-      @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
-
-      selection_start = @selection_start.lesser(@selection_end)
-      selection_end = @selection_start.greater(@selection_end)
-      selection_visible = selection_start != selection_end
-
-      content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
-      content_top = @content_y + @content_h # internal use only, used for draw
-      selection_h = @font_height + @padding * 2
-
-      i = (scroll_h - content_top).idiv(@font_height).greater(0) - 1
-      l = (scroll_h - content_bottom).idiv(@font_height).lesser(lines.length)
-      while (i += 1) < l
-        line = lines[i]
-        y = @scroll_h - @padding - (i + 1) * @font_height
-
-        # SELECTION
-        if selection_visible && selection_start <= line.end && selection_end >= line.start
-          left = line.measure_to((selection_start - line.start).greater(0))
-          right = line.measure_to((selection_end - line.start).lesser(line.length))
-          rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
+        # CURSOR AND SCROLL LOCATION
+        @cursor_line = lines.line_at(@selection_end)
+        @cursor_index = @selection_end - @cursor_line.start
+        # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
+        if @cursor_index == @cursor_line.length && @cursor_line.wrapped? && lines.length > @cursor_line.number
+          @cursor_line = lines[@cursor_line.number + 1]
+          @cursor_index = 0
         end
 
-        # TEXT FOR LINE
-        rt.primitives << { x: 0, y: y - @content_y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
+        @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
+        @cursor_y += @h - @content_h if @content_h < @h
+        if @scroll_h <= @h # total height is less than height of the control
+          @content_y = 0
+        elsif @ensure_cursor_visible
+          if @cursor_y + @font_height > @content_y + @content_h
+            @content_y = @cursor_y + @font_height - @content_h
+          elsif @cursor_y < @content_y
+            @content_y = @cursor_y
+          end
+        else
+          @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
+        end
+        # TODO: Ensure cursor_x doesn't go past the line width
+        @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
+
+        selection_start = @selection_start.lesser(@selection_end)
+        selection_end = @selection_start.greater(@selection_end)
+        selection_visible = selection_start != selection_end
+
+        content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
+        content_top = @content_y + @content_h # internal use only, used for draw
+        selection_h = @font_height + @padding * 2
+
+        i = (@scroll_h - content_top).idiv(@font_height).greater(0) - 1
+        l = (@scroll_h - content_bottom).idiv(@font_height).lesser(lines.length)
+        b = @scroll_h - @padding - @content_y
+        b += @h - @content_h if @content_h < @h
+        while (i += 1) < l
+          line = lines[i]
+          y = b - (i + 1) * @font_height
+
+          # SELECTION
+          if selection_visible && selection_start <= line.end && selection_end >= line.start
+            left = line.measure_to((selection_start - line.start).greater(0))
+            right = line.measure_to((selection_end - line.start).lesser(line.length))
+            rt.primitives << { x: left, y: y + @padding, w: right - left, h: selection_h }.solid!(sc)
+          end
+
+          # TEXT FOR LINE
+          rt.primitives << { x: 0, y: y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
+        end
       end
 
       draw_cursor(rt)

@@ -1,6 +1,10 @@
 # v0.0.8 - DD October 2023
 
 * Made `handle_mouse` and `on_clicked` smarter to handle right clicks
+* Fixed "EXCEPTION: wrong number of arguments (2 for 0)" for `NOOP`
+* Added `max_length`
+* Added `#current_word`
+* Added `prompt` and `prompt_*` (`r`, `g`, `b`, `a`)
 
 # v0.0.7 - 21 October 2023
 
@@ -84,29 +88,38 @@
 
 # Known Issues and TODO
 
-// Saturday 09/02/23 at 04:45PM - 33 files in 0.1 secs
+// Sunday 10/29/23 at 04:42PM - 35 files in 0.13 secs
 
-## BUG (1)
-1. lib/base.rb:20         Modifier keys are broken on the web ()
+## BUG (2)
+1. lib/base.rb:22               Modifier keys are broken on the web ()
+2. lib/multiline.rb:199         If the first line has only one char, down moves right from the first column
 
-## TODO (20)
-1. lib/base.rb:107        Cursor renders outside of the bounds of the control
-2. lib/base.rb:291        Improve walking words
-3. lib/text.rb:12         undo/redo
-4. lib/text.rb:30         Treat delete and backspace differently
-5. lib/text.rb:52         Word selection (double click), All selection (triple click)
-6. lib/text.rb:69         handle scrolling to the right with mouse
-7. lib/text.rb:92         handle padding correctly
-8. lib/text.rb:106        implement sprite background
-9. lib/multiline.rb:20    undo/redo
-10. lib/multiline.rb:51   Retain a original_cursor_x when moving up/down to try stay generally in the same x range
-11. lib/multiline.rb:56   beginning of previous paragraph with alt
-12. lib/multiline.rb:63   end of next paragraph with alt
-13. lib/multiline.rb:169  Word selection (double click), All selection (triple click)
-14. lib/multiline.rb:210  prolly need to replace \r\n with \n up front
-15. lib/multiline.rb:214  consider how to render TAB, maybe convert TAB into 4 spaces?
-16. lib/multiline.rb:220  consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
-17. lib/multiline.rb:238  consider how to render TAB, maybe convert TAB into 4 spaces?
-18. lib/multiline.rb:289  Implement line spacing
-19. lib/multiline.rb:294  implement sprite background
-20. lib/multiline.rb:312  Ensure cursor_x doesn't go past the line width
+## TODO (28)
+1. lib/base.rb:145              cursor size
+2. lib/base.rb:146              cursor color
+3. lib/base.rb:254              Improve walking words
+4. lib/line_collection.rb:56    Test `index_at` with multiple different fonts
+5. lib/line_collection.rb:173   prolly need to replace \r\n with \n up front
+6. lib/line_collection.rb:177   consider how to render TAB, maybe convert TAB into 4 spaces?
+7. lib/line_collection.rb:183   consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
+8. lib/line_collection.rb:201   consider how to render TAB, maybe convert TAB into 4 spaces?
+9. lib/text.rb:34               undo/redo
+10. lib/text.rb:61              Treat delete and backspace differently
+11. lib/text.rb:88              Word selection (double click), All selection (triple click)
+12. lib/text.rb:142             handle padding correctly
+13. lib/text.rb:159             implement sprite background
+14. lib/input.rb:10             Switch clipboard to system clipboard when setclipboard is available
+15. lib/input.rb:11             Drag selected text
+16. lib/input.rb:12             Home key and End key
+17. lib/input.rb:13             Render Squiggly lines
+18. lib/input.rb:14             “ghosting text” feature
+19. lib/input.rb:15             Find/Replace (all)
+20. lib/input.rb:16             Replace unavailable chars with [?]
+21. lib/multiline.rb:44         undo/redo
+22. lib/multiline.rb:89         Retain a original_cursor_x when moving up/down to try stay generally in the same x range
+23. lib/multiline.rb:95         beginning of previous paragraph with alt
+24. lib/multiline.rb:104        end of next paragraph with alt
+25. lib/multiline.rb:236        Word selection (double click), All selection (triple click)
+26. lib/multiline.rb:291        Implement line spacing
+27. lib/multiline.rb:301        implement sprite background
+28. lib/multiline.rb:333        Ensure cursor_x doesn't go past the line width
