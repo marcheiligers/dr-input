@@ -1,5 +1,10 @@
 module Input
   class Text < Base
+    def initialize(**params)
+      @value = TextValue.new(params[:value] || '')
+      super
+    end
+
     def draw_override(ffi)
       # The argument order for ffi_draw.draw_sprite_3 is:
       # x, y, w, h,
@@ -11,13 +16,13 @@ module Input
       # angle_anchor_x, angle_anchor_y,
       # source_x, source_y, source_w, source_h
       ffi.draw_sprite_3(
-        @x, @y, @content_w, @h,
+        @x, @y, @w, @h,
         @path,
         0, 255, 255, 255, 255,
         nil, nil, nil, nil,
         false, false,
         0, 0,
-        0, 0, @content_w, @content_h
+        0, 0, @w, @h
       )
       super # handles focus
     end
@@ -81,7 +86,7 @@ module Input
     end
 
     # TODO: Word selection (double click), All selection (triple click)
-    def handle_mouse
+    def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       mouse = $args.inputs.mouse
 
       if mouse.wheel && mouse.inside_rect?(self)
@@ -92,8 +97,8 @@ module Input
 
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
-      if @mouse_down # draggin
-        index = find_index_at_x(mouse.x - @x + @content_x) # TODO: handle scrolling to the right with mouse
+      if @mouse_down # dragging
+        index = find_index_at_x(mouse.x - @x + @content_x)
         @selection_end = index
         @mouse_down = false if mouse.up
       else
@@ -143,50 +148,57 @@ module Input
         sc = @blurred_selection_color
       end
 
-      @scroll_w = $gtk.calcstringbox(@value, @size_enum, @font)[0].ceil
+      @scroll_w = $gtk.calcstringbox(@value.to_s, @size_enum, @font)[0].ceil
       @content_w = @w.lesser(@scroll_w)
       @scroll_h = @content_h = @h
 
       rt = $args.outputs[@path]
-      rt.w = @content_w
-      rt.h = @content_h
+      rt.w = @w
+      rt.h = @h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
-      # CURSOR AND SCROLL LOCATION
-      @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
-      @cursor_y = 0
-
-      if @content_w < @w
+      if @value.empty?
+        @cursor_x = 0
+        @cursor_y = 0
         @content_x = 0
-      elsif @ensure_cursor_visible
-        if @cursor_x > @content_x + @content_w
-          @content_x = @cursor_x - @content_w
-        elsif @cursor_x < @content_x
-          @content_x = @cursor_x
-        end
+        rt.primitives << { x: 0, y: @padding, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
       else
-        @content_x = @content_x.cap_min_max(0, @scroll_w - @w)
-      end
+        # CURSOR AND SCROLL LOCATION
+        @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
+        @cursor_y = 0
 
-      # SELECTION
-      if @selection_start != @selection_end
-        if @selection_start < @selection_end
-          left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
-          right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
-        elsif @selection_start > @selection_end
-          left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
-          right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+        if @content_w < @w
+          @content_x = 0
+        elsif @ensure_cursor_visible
+          if @cursor_x > @content_x + @content_w
+            @content_x = @cursor_x - @content_w
+          elsif @cursor_x < @content_x
+            @content_x = @cursor_x
+          end
+        else
+          @content_x = @content_x.cap_min_max(0, @scroll_w - @w)
         end
 
-        rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
-      end
+        # SELECTION
+        if @selection_start != @selection_end
+          if @selection_start < @selection_end
+            left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+            right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+          elsif @selection_start > @selection_end
+            left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+            right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+          end
 
-      # TEXT
-      f = find_index_at_x(@content_x)
-      l = find_index_at_x(@content_x + @content_w) + 2
-      rt.primitives << { x: 0, y: @padding, text: @value[f, l - f], size_enum: @size_enum, font: @font }.label!(@text_color)
+          rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
+        end
+
+        # TEXT
+        f = find_index_at_x(@content_x)
+        l = find_index_at_x(@content_x + @content_w) + 2
+        rt.primitives << { x: 0, y: @padding, text: @value[f, l - f], size_enum: @size_enum, font: @font }.label!(@text_color)
+      end
 
       draw_cursor(rt)
     end

@@ -20,7 +20,7 @@ scale_quality=2
 # packageid=org.dev.gamename
 
 # Setting this property to true will enable High DPI rendering (try in combination with scale_quality to see what looks best)
-highdpi=true
+highdpi=false
 
 # === Portrait Mode ===
 # The orientation can be set to either landscape (1280x720) or portrait (720x1280)

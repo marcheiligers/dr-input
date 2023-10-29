@@ -39,9 +39,9 @@ module Input
 
     def measure_to(index)
       if @text[0] == "\n"
-        index < 1 ? 0 : $gtk.calcstringbox(@text[1, index - 1], @size_enum, @font)[0]
+        index < 1 ? 0 : $gtk.calcstringbox(@text[1, index - 1].to_s, @size_enum, @font)[0]
       else
-        $gtk.calcstringbox(@text[0, index], @size_enum, @font)[0]
+        $gtk.calcstringbox(@text[0, index].to_s, @size_enum, @font)[0]
       end
     end
 
@@ -99,6 +99,10 @@ module Input
     def <<(line)
       @lines.append(line)
       self
+    end
+
+    def empty?
+      @lines.empty?
     end
 
     def replace(old_lines, new_lines)

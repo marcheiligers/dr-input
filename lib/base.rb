@@ -17,7 +17,7 @@ module Input
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
 
-    NOOP = -> {}
+    NOOP = ->(*_args) {}
 
     # BUG: Modifier keys are broken on the web ()
     META_KEYS = %i[meta_left meta_right meta].freeze
@@ -57,7 +57,16 @@ module Input
       @background_color = params[:background_color]
       @blurred_background_color = params[:blurred_background_color] || @background_color
 
-      @value = params[:value] || ''
+      @prompt = params[:prompt] || ''
+      @prompt_color = {
+        r: params[:prompt_r] || 128,
+        g: params[:prompt_g] || 128,
+        b: params[:prompt_b] || 128,
+        a: params[:prompt_a] || 255,
+        vertical_alignment_enum: 0
+      }
+
+      @max_length = params[:max_length] || false
 
       @selection_start = params[:selection_start] || @value.length
       @selection_end = params[:selection_end] || @selection_start
@@ -90,10 +99,6 @@ module Input
 
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"
-      @source_x = 0 # TODO: remove, replaced by content_*
-      @source_y = 0 # TODO: remove, replaced by content_*
-      @source_w = @w # TODO: remove, replaced by content_*
-      @source_h = @h # TODO: remove, replaced by content_*
 
       @content_x = 0
       @content_y = 0
@@ -160,21 +165,6 @@ module Input
       prepare_render_target
     end
 
-    def value=(text)
-      @value = text
-      @selection_start = @selection_start.lesser(@value.length)
-      @selection_end = @selection_end.lesser(@value.length)
-      @value_changed = true
-    end
-
-    def selection_start=(index)
-      @selection_start = index.cap_min_max(0, @value.length)
-    end
-
-    def selection_end=(index)
-      @selection_end = index.cap_min_max(0, @value.length)
-    end
-
     def focussed?
       @focussed
     end
@@ -187,138 +177,32 @@ module Input
       @focussed = false
     end
 
-    def select_all
-      @selection_start = 0
-      @selection_end = @value.length
+    def value=(text)
+      text = text[0, @max_length] if @max_length
+      @value.replace(text)
+      @selection_start = @selection_start.lesser(text.length)
+      @selection_end = @selection_end.lesser(text.length)
     end
 
-    def select_to_start
-      @selection_end = 0
+    def selection_start=(index)
+      @selection_start = index.cap_min_max(0, @value.length)
     end
 
-    def move_to_start
-      @selection_start = @selection_end = 0
+    def selection_end=(index)
+      @selection_end = index.cap_min_max(0, @value.length)
     end
 
-    def select_to_end
-      @selection_end = @value.length
-    end
-
-    def move_to_end
-      @selection_start = @selection_end = @value.length
-    end
-
-    def delete_back # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      if @selection_start == @selection_end
-        @value = @value[0, @selection_start - 1].to_s + @value[@selection_start, @value.length]
-        @selection_start = (@selection_start - 1).greater(0)
-        @selection_end = @selection_start
-      elsif @selection_start < @selection_end
-        @value = @value[0, @selection_start] + @value[@selection_end, @value.length]
-        @selection_end = @selection_start
-      else
-        @value = @value[0, @selection_end] + @value[@selection_start, @value.length]
-        @selection_start = @selection_end
+    def insert(str)
+      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
+      if @max_length && @value.length - (@selection_end - @selection_start) + str.length > @max_length
+        str = str[0, @max_length - @value.length + (@selection_end - @selection_start) - str.length]
+        return if str.nil? # too long
       end
-      @value_changed = true
-    end
 
-    def select_word_left
-      @selection_end = find_word_break_left
-    end
+      @value.insert(@selection_start, @selection_end, str)
 
-    def select_word_right
-      @selection_end = find_word_break_right
-    end
-
-    def select_char_left
-      @selection_end = (@selection_end - 1).greater(0)
-    end
-
-    def select_char_right
-      @selection_end = (@selection_end + 1).lesser(@value.length)
-    end
-
-    def move_word_left
-      @selection_start = @selection_end = find_word_break_left
-    end
-
-    def move_word_right
-      @selection_start = @selection_end = find_word_break_right
-    end
-
-    def move_char_left
-      @selection_end = if @selection_end > @selection_start
-                         @selection_start
-                       elsif @selection_end < @selection_start
-                         @selection_end
-                       else
-                         (@selection_start - 1).greater(0)
-                       end
-      @selection_start = @selection_end
-    end
-
-    def move_char_right
-      @selection_end = if @selection_end > @selection_start
-                         @selection_end
-                       elsif @selection_end < @selection_start
-                         @selection_start
-                       else
-                         (@selection_start + 1).lesser(@value.length)
-                       end
-      @selection_start = @selection_end
-    end
-
-    def copy
-      return if @selection_start == @selection_end
-
-      $clipboard = if @selection_start < @selection_end
-                     @value[@selection_start, @selection_end - @selection_start]
-                   else
-                     @value[@selection_end, @selection_start - @selection_end]
-                   end
-    end
-
-    def cut
-      copy
-      insert('')
-    end
-
-    def paste
-      insert($clipboard)
-    end
-
-    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      keyboard = $args.inputs.keyboard
-
-      tick_count = $args.tick_count
-      repeat_keys = keyboard.key_held.truthy_keys.select do |key|
-        ticks = tick_count - keyboard.key_held.send(key).to_i
-        ticks > @key_repeat_delay && ticks % @key_repeat_debounce == 0
-      end
-      @down_keys = keyboard.key_down.truthy_keys.concat(repeat_keys) - IGNORE_KEYS
-
-      # Find special keys
-      special_keys = keyboard.key_down.truthy_keys + keyboard.key_held.truthy_keys
-      @meta = (special_keys & META_KEYS).any?
-      @alt = (special_keys & ALT_KEYS).any?
-      @shift = (special_keys & SHIFT_KEYS).any?
-      @ctrl = (special_keys & CTRL_KEYS).any?
-    end
-
-    def insert(str) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      if @selection_start == @selection_end
-        @value = @value[0, @selection_start].to_s + str + @value[@selection_start, @value.length].to_s
-        @selection_start += str.length
-      elsif @selection_start < @selection_end
-        @value = @value[0, @selection_start].to_s + str + @value[@selection_end, @value.length].to_s
-        @selection_start += str.length
-      elsif @selection_start > @selection_end
-        @value = @value[0, @selection_end].to_s + str + @value[@selection_start, @value.length].to_s
-        @selection_start = @selection_end + str.length
-      end
+      @selection_start += str.length
       @selection_end = @selection_start
-      @value_changed = true
     end
     alias replace insert
 
@@ -338,6 +222,12 @@ module Input
       else
         @value[@selection_end, @selection_start - @selection_end]
       end
+    end
+
+    def current_word
+      left = @word_chars.include?(@value[@selection_end - 1, 1]) ? find_word_break_left : @selection_end
+      right = @word_chars.include?(@value[@selection_end, 1]) ? find_word_break_right : @selection_end
+      @value[left, right - left]
     end
 
     def find_next
@@ -395,6 +285,111 @@ module Input
         return length if index == length
         return index unless @word_chars.include?(@value[index, 1])
       end
+    end
+
+    def select_all
+      @selection_start = 0
+      @selection_end = @value.length
+    end
+
+    def select_to_start
+      @selection_end = 0
+    end
+
+    def move_to_start
+      @selection_start = @selection_end = 0
+    end
+
+    def select_to_end
+      @selection_end = @value.length
+    end
+
+    def move_to_end
+      @selection_start = @selection_end = @value.length
+    end
+
+    def select_word_left
+      @selection_end = find_word_break_left
+    end
+
+    def select_word_right
+      @selection_end = find_word_break_right
+    end
+
+    def select_char_left
+      @selection_end = (@selection_end - 1).greater(0)
+    end
+
+    def select_char_right
+      @selection_end = (@selection_end + 1).lesser(@value.length)
+    end
+
+    def move_word_left
+      @selection_start = @selection_end = find_word_break_left
+    end
+
+    def move_word_right
+      @selection_start = @selection_end = find_word_break_right
+    end
+
+    def move_char_left
+      @selection_end = if @selection_end > @selection_start
+                         @selection_start
+                       elsif @selection_end < @selection_start
+                         @selection_end
+                       else
+                         (@selection_start - 1).greater(0)
+                       end
+      @selection_start = @selection_end
+    end
+
+    def move_char_right
+      @selection_end = if @selection_end > @selection_start
+                         @selection_end
+                       elsif @selection_end < @selection_start
+                         @selection_start
+                       else
+                         (@selection_start + 1).lesser(@value.length)
+                       end
+      @selection_start = @selection_end
+    end
+
+    def copy
+      return if @selection_start == @selection_end
+
+      $clipboard = current_selection
+    end
+
+    def cut
+      copy
+      insert('')
+    end
+
+    def delete_back
+      @selection_start -= 1 if @selection_start == @selection_end
+      insert('')
+    end
+
+    def paste
+      insert($clipboard)
+    end
+
+    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      keyboard = $args.inputs.keyboard
+
+      tick_count = $args.tick_count
+      repeat_keys = keyboard.key_held.truthy_keys.select do |key|
+        ticks = tick_count - keyboard.key_held.send(key).to_i
+        ticks > @key_repeat_delay && ticks % @key_repeat_debounce == 0
+      end
+      @down_keys = keyboard.key_down.truthy_keys.concat(repeat_keys) - IGNORE_KEYS
+
+      # Find special keys
+      special_keys = keyboard.key_down.truthy_keys + keyboard.key_held.truthy_keys
+      @meta = (special_keys & META_KEYS).any?
+      @alt = (special_keys & ALT_KEYS).any?
+      @shift = (special_keys & SHIFT_KEYS).any?
+      @ctrl = (special_keys & CTRL_KEYS).any?
     end
 
     def rect

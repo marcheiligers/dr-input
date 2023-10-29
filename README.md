@@ -41,6 +41,11 @@ See `app/main.rb` for a more complex example.
 * `g` - font color, green component, default 0
 * `b` - font color, blue component, default 0
 * `a` - font color, alpha component, default 255
+* `prompt` - prompt text - ghosted text when the control is empty, default ''
+* `prompt_r` - prompt color, red component, default 128
+* `prompt_g` - prompt color, green component, default 128
+* `prompt_b` - prompt color, blue component, default 128
+* `prompt_a` - prompt color, alpha component, default 255
 * `background_color` - background color, can be array or hash format, default nil
 * `blurred_background_color` - background color, can be array or hash format, default `background_color`
 * `word_chars` - characters considered to be parts of a word, default `('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']`
@@ -56,11 +61,12 @@ See `app/main.rb` for a more complex example.
 * `blurred_selection_b` - blurred selection color, blue component, default 144
 * `blurred_selection_a` - blurred selection color, alpha component, default 128
 * `key_repeat_delay` - delay before function key combinations (cursor, cut/copy/paste and so on) begin to repeat in ticks (Integer), default 20
-* `key_repeat_debounce` - number of ticks (Integer) between function key repeat, default 5
+* `key_repeat_debounce` - number of ticks (Integer) between function key repeat, default 4
 * `word_wrap` - if the control should wrap (Boolean), default false
 * `focussed` - initial input focus (Boolean), default false
 * `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
 * `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
+* `max_length` - maximum allowed length (Integer), default `false` which disables length checks
 
 ### Attribute accessors
 
@@ -78,6 +84,7 @@ See `app/main.rb` for a more complex example.
 * `#replace(text)` - Alias for `#insert(text)`
 * `#current_selection` - Returns the currently selected text
 * `#current_line` - Returns the currently selected line object
+* `#current_word` - Returns the word currently under the cursor
 * `#find(text)` - Selects the searched for text if found
 * `#find_next` - Selects the next instance of the currently selected text
 * `#find_prev` - Selects the previous instance of the currently selected text

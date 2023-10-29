@@ -4,13 +4,11 @@ module Input
 
     def initialize(**params)
       value = params[:value]
-      params[:value] = nil
 
       super
 
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
-      @line_parser = LineParser.new(word_wrap_chars, @crlf_chars, @font, @size_enum)
-      @lines = @line_parser.perform_word_wrap(value, @w)
+      @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @font, @size_enum, @w)
     end
 
     def draw_override(ffi)
@@ -24,13 +22,13 @@ module Input
       # angle_anchor_x, angle_anchor_y,
       # source_x, source_y, source_w, source_h
       ffi.draw_sprite_3(
-        @x, @y + @h - @content_h, @content_w, @content_h,
+        @x, @y, @w, @h,
         @path, 0,
         255, 255, 255, 255,
         nil, nil, nil, nil,
         false, false,
         0, 0,
-        0, 0, @content_w, @content_h
+        0, 0, @w, @h
       )
       super # handles focus
     end
@@ -126,23 +124,23 @@ module Input
     end
 
     def select_to_line_start
-      line = @lines.line_at(@selection_end)
+      line = @value.lines.line_at(@selection_end)
       index = line.new_line? ? line.start + 1 : line.start
       @selection_end = index
     end
 
     def move_to_line_start
-      line = @lines.line_at(@selection_end)
+      line = @value.lines.line_at(@selection_end)
       index = line.new_line? ? line.start + 1 : line.start
       @selection_start = @selection_end = index
     end
 
     def find_line_end
-      line = @lines.line_at(@selection_end)
+      line = @value.lines.line_at(@selection_end)
       if line.wrapped?
         if @selection_end == line.end
-          if @lines.length > line.number
-            line = @lines[line.number + 1]
+          if @value.lines.length > line.number
+            line = @value.lines[line.number + 1]
             line.wrapped? ? line.end - 1 : line.end
           else
             line.end
@@ -182,36 +180,36 @@ module Input
     def selection_end_up_index
       return 0 if selection_end == 0
 
-      line = @lines.line_at(@selection_end)
+      line = @value.lines.line_at(@selection_end)
       if line.wrapped? && line.end == @selection_end
         line.new_line? ? line.start + 1 : line.start
       elsif line.number == 0
         @selection_end
       elsif line.new_line? && @selection_end == line.start + 1
-        line = @lines[line.number - 1]
+        line = @value.lines[line.number - 1]
         line.new_line? ? line.start + 1 : line.start
       elsif @selection_end == line.start
-        @lines[line.number - 1].start
+        @value.lines[line.number - 1].start
       else
-        @lines[line.number - 1].index_at(@cursor_x + @content_x)
+        @value.lines[line.number - 1].index_at(@cursor_x + @content_x)
       end
     end
 
     def selection_end_down_index
       # BUG: If the first line has only one char, down moves right from the first column
-      line = @lines.line_at(@selection_end)
-      if line.number == @lines.length - 1
+      line = @value.lines.line_at(@selection_end)
+      if line.number == @value.lines.length - 1
         @selection_end
       elsif line.new_line? && @selection_end == line.start + 1
-        line = @lines[line.number + 1]
+        line = @value.lines[line.number + 1]
         line.new_line? ? line.start + 1 : line.start
       elsif @selection_end == line.start
-        @lines[line.number + 1].start
-      elsif line.wrapped? && line.end == @selection_end && line.number < @lines.length - 2
-        line = @lines[line.number + 2]
+        @value.lines[line.number + 1].start
+      elsif line.wrapped? && line.end == @selection_end && line.number < @value.lines.length - 2
+        line = @value.lines[line.number + 2]
         line.new_line? ? line.start + 1 : line.start
       else
-        @lines[line.number + 1].index_at(@cursor_x + @content_x)
+        @value.lines[line.number + 1].index_at(@cursor_x + @content_x)
       end
     end
 
@@ -232,22 +230,23 @@ module Input
     end
 
     def current_line
-      @lines&.line_at(@selection_end)
+      @value.lines&.line_at(@selection_end)
     end
 
     # TODO: Word selection (double click), All selection (triple click)
-    def handle_mouse
+    def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       mouse = $args.inputs.mouse
+      inside = mouse.inside_rect?(self)
 
-      if mouse.wheel && mouse.inside_rect?(self)
+      if mouse.wheel && inside
         @content_y += mouse.wheel.y * @mouse_wheel_speed
         @ensure_cursor_visible = false
       end
 
-      return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
+      return unless @mouse_down || (mouse.down && inside)
 
       relative_y = @scroll_h - (mouse.y - @y + @content_y)
-      line = @lines[relative_y.idiv(@font_height).cap_min_max(0, @lines.length - 1)]
+      line = @value.lines[relative_y.idiv(@font_height).cap_min_max(0, @value.lines.length - 1)]
       index = line.index_at(mouse.x - @x + @content_x)
 
       if @mouse_down # dragging
@@ -255,7 +254,7 @@ module Input
         @mouse_down = false if mouse.up
       else # clicking
         @on_clicked.call(mouse, self)
-        return unless @focussed || @will_focus
+        return unless (@focussed || @will_focus) && mouse.button_left
 
         if @shift
           @selection_end = index
@@ -266,158 +265,6 @@ module Input
       end
 
       @ensure_cursor_visible = true
-    end
-
-    def value
-      @lines.text
-    end
-
-    def value=(text)
-      @lines = @line_parser.perform_word_wrap(text, @w)
-      @selection_start = @selection_start.lesser(text.length)
-      @selection_end = @selection_end.lesser(text.length)
-    end
-
-    def insert(str)
-      @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
-
-      modified_lines = @lines.modified(@selection_start, @selection_end)
-      original_value = modified_lines.text
-      first_modified_line = modified_lines.first
-      original_index = first_modified_line.start
-      modified_value = original_value[0, @selection_start - original_index].to_s + str + original_value[@selection_end - original_index, original_value.length].to_s
-      new_lines = @line_parser.perform_word_wrap(modified_value, @w, first_modified_line.number, original_index)
-
-      @lines.replace(modified_lines, new_lines)
-
-      @selection_start += str.length
-      @selection_end = @selection_start
-    end
-    alias replace insert
-
-    def copy
-      return if @selection_start == @selection_end
-
-      $clipboard = if @selection_start < @selection_end
-                     @lines.text[@selection_start, @selection_end - @selection_start]
-                   else
-                     @lines.text[@selection_end, @selection_start - @selection_end]
-                   end
-    end
-
-    def cut
-      copy
-      insert('')
-    end
-
-    def delete_back
-      @selection_start -= 1 if @selection_start == @selection_end
-      insert('')
-    end
-
-    def select_all
-      @selection_start = 0
-      @selection_end = @lines.last.end
-    end
-
-    def select_to_end
-      @selection_end = @lines.last.end
-    end
-
-    def move_to_end
-      @selection_start = @selection_end = @lines.last.end
-    end
-
-    def select_char_right
-      @selection_end = (@selection_end + 1).lesser(@lines.last.end)
-    end
-
-    def move_char_right
-      @selection_end = if @selection_end > @selection_start
-                         @selection_end
-                       elsif @selection_end < @selection_start
-                         @selection_start
-                       else
-                         (@selection_start + 1).lesser(@lines.last.end)
-                       end
-      @selection_start = @selection_end
-    end
-
-    def find(text)
-      index = @lines.text.index(text)
-      return unless index
-
-      @selection_start = index
-      @selection_end = index + text.length
-    end
-
-    def current_selection
-      return nil if @selection_start == @selection_end
-
-      if @selection_start < @selection_end
-        @lines.text[@selection_start, @selection_end - @selection_start]
-      else
-        @lines.text[@selection_end, @selection_start - @selection_end]
-      end
-    end
-
-    def find_next
-      text = current_selection
-      return if text.nil?
-
-      value = @lines.text
-      index = value.index(text, @selection_end.greater(@selection_start)) || value.index(text)
-
-      @selection_start = index
-      @selection_end = index + text.length
-    end
-
-    def find_prev
-      text = current_selection
-      return if text.nil?
-
-      value = @lines.text
-      index = value.rindex(text, (@selection_start - 1).lesser(@selection_end - 1)) || value.rindex(text, value.length)
-
-      @selection_start = index
-      @selection_end = index + text.length
-    end
-
-    def find_word_break_left
-      return 0 if @selection_end == 0
-
-      index = @selection_end
-      value = @lines.text
-
-      loop do
-        index -= 1
-        return 0 if index == 0
-        break if @word_chars.include?(value[index, 1])
-      end
-
-      loop do
-        index -= 1
-        return 0 if index == 0
-        return index + 1 unless @word_chars.include?(value[index, 1])
-      end
-    end
-
-    def find_word_break_right(index = @selection_end)
-      value = @lines.text
-      length = value.length
-      return length if index == length
-
-      loop do
-        index += 1
-        return length if index == length
-        break if @word_chars.include?(value[index, 1])
-      end
-
-      loop do
-        index += 1
-        return length if index == length
-        return index unless @word_chars.include?(value[index, 1])
-      end
     end
 
     # @scroll_w - The `scroll_w` read-only property is a measurement of the width of an element's content,
@@ -442,63 +289,76 @@ module Input
       end
 
       # TODO: Implement line spacing
+      lines = @value.lines
       @scroll_w = @content_w = @w
-      @scroll_h = @lines.length * @font_height + 2 * @padding
+      @scroll_h = lines.length * @font_height + 2 * @padding
       @content_h = @h.lesser(@scroll_h)
+
       rt = $args.outputs[@path]
-      rt.w = @content_w
-      rt.h = @content_h
+      rt.w = @w
+      rt.h = @h
       rt.background_color = bg
       # TODO: implement sprite background
       rt.transient!
 
-      # CURSOR AND SCROLL LOCATION
-      @cursor_line = @lines.line_at(@selection_end)
-      @cursor_index = @selection_end - @cursor_line.start
-      # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
-      if @cursor_index == @cursor_line.length && @cursor_line.wrapped? && @lines.length > @cursor_line.number
-        @cursor_line = @lines[@cursor_line.number + 1]
-        @cursor_index = 0
-      end
-
-      @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
-      if @scroll_h <= @h # total height is less than height of the control
-        @content_y = 0
-      elsif @ensure_cursor_visible
-        if @cursor_y + @font_height > @content_y + @content_h
-          @content_y = @cursor_y + @font_height - @content_h
-        elsif @cursor_y < @content_y
-          @content_y = @cursor_y
-        end
+      if @value.empty?
+        @cursor_line = 0
+        @cursor_x = 0
+        @cursor_y = @h - @font_height
+        @content_x = 0
+        rt.primitives << { x: 0, y: @h - @font_height, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
       else
-        @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
-      end
-      # TODO: Ensure cursor_x doesn't go past the line width
-      @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
-
-      selection_start = @selection_start.lesser(@selection_end)
-      selection_end = @selection_start.greater(@selection_end)
-      selection_visible = selection_start != selection_end
-
-      content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
-      content_top = @content_y + @content_h # internal use only, used for draw
-      selection_h = @font_height + @padding * 2
-
-      i = (scroll_h - content_top).idiv(@font_height).greater(0) - 1
-      l = (scroll_h - content_bottom).idiv(@font_height).lesser(@lines.length)
-      while (i += 1) < l
-        line = @lines[i]
-        y = @scroll_h - @padding - (i + 1) * @font_height
-
-        # SELECTION
-        if selection_visible && selection_start <= line.end && selection_end >= line.start
-          left = line.measure_to((selection_start - line.start).greater(0))
-          right = line.measure_to((selection_end - line.start).lesser(line.length))
-          rt.primitives << { x: left, y: y + @padding - @content_y, w: right - left, h: selection_h }.solid!(sc)
+        # CURSOR AND SCROLL LOCATION
+        @cursor_line = lines.line_at(@selection_end)
+        @cursor_index = @selection_end - @cursor_line.start
+        # Move the cursor to the beginning of the next line if the line is wrapped and we're at the end of the line
+        if @cursor_index == @cursor_line.length && @cursor_line.wrapped? && lines.length > @cursor_line.number
+          @cursor_line = lines[@cursor_line.number + 1]
+          @cursor_index = 0
         end
 
-        # TEXT FOR LINE
-        rt.primitives << { x: 0, y: y - @content_y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
+        @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
+        @cursor_y += @h - @content_h if @content_h < @h
+        if @scroll_h <= @h # total height is less than height of the control
+          @content_y = 0
+        elsif @ensure_cursor_visible
+          if @cursor_y + @font_height > @content_y + @content_h
+            @content_y = @cursor_y + @font_height - @content_h
+          elsif @cursor_y < @content_y
+            @content_y = @cursor_y
+          end
+        else
+          @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
+        end
+        # TODO: Ensure cursor_x doesn't go past the line width
+        @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
+
+        selection_start = @selection_start.lesser(@selection_end)
+        selection_end = @selection_start.greater(@selection_end)
+        selection_visible = selection_start != selection_end
+
+        content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
+        content_top = @content_y + @content_h # internal use only, used for draw
+        selection_h = @font_height + @padding * 2
+
+        i = (@scroll_h - content_top).idiv(@font_height).greater(0) - 1
+        l = (@scroll_h - content_bottom).idiv(@font_height).lesser(lines.length)
+        b = @scroll_h - @padding - @content_y
+        b += @h - @content_h if @content_h < @h
+        while (i += 1) < l
+          line = lines[i]
+          y = b - (i + 1) * @font_height
+
+          # SELECTION
+          if selection_visible && selection_start <= line.end && selection_end >= line.start
+            left = line.measure_to((selection_start - line.start).greater(0))
+            right = line.measure_to((selection_end - line.start).lesser(line.length))
+            rt.primitives << { x: left, y: y + @padding, w: right - left, h: selection_h }.solid!(sc)
+          end
+
+          # TEXT FOR LINE
+          rt.primitives << { x: 0, y: y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
+        end
       end
 
       draw_cursor(rt)
