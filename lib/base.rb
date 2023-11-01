@@ -68,7 +68,7 @@ module Input
 
       @max_length = params[:max_length] || false
 
-      @selection_start = params[:selection_start] || @value.length
+      @selection_start = params[:selection_start] || params.fetch(:value, '').length
       @selection_end = params[:selection_end] || @selection_start
 
       @selection_color = {

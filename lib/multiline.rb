@@ -234,6 +234,7 @@ module Input
     end
 
     # TODO: Word selection (double click), All selection (triple click)
+    # BUG: When content is shorter than height, mouse is off
     def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       mouse = $args.inputs.mouse
       inside = mouse.inside_rect?(self)
