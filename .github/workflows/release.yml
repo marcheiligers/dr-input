@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@master
+      - name: Merge files
+        run: |
+          files=$(grep require_relative lib/input.rb | sed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")          
+          grep -v require_relative lib/input.rb >> input.rb
+          for file in ${files}
+          do
+            cat "lib/${file}" >> input.rb
+            echo "" >> input.rb
+          done
+        shell: bash
+      - name: Get version
+        run: echo "::set-output name=version::$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')"
+        id: version
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload release
+        uses: actions/upload-release-asset@master
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: input.rb
+          asset_name: input.rb
+          asset_content_type: text/ruby
