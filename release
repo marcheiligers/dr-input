@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+rm input.rb | true
+files=$(grep require_relative lib/input.rb | gsed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")
+
+grep -v require_relative lib/input.rb >> input.rb
+
+for file in ${files}
+do
+  cat "lib/${file}" >> input.rb
+  echo "" >> input.rb
+done

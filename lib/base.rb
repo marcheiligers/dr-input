@@ -95,7 +95,7 @@ module Input
 
       # Mouse focus for seletion
       @mouse_down = false
-      @mouse_wheel_speed = params[:mouse_wheel_speed] || 10
+      @mouse_wheel_speed = params[:mouse_wheel_speed] || @font_height
 
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"

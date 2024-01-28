@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@master
       - name: Merge files
         run: |
-          files=$(grep require_relative lib/input.rb | sed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")          
+          files=$(grep require_relative lib/input.rb | sed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")
           grep -v require_relative lib/input.rb >> input.rb
           for file in ${files}
           do
@@ -35,11 +35,11 @@ jobs:
           tag_name: ${{ github.ref }}
           body_path: CHANGELOG.md
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       - name: Upload release
         uses: actions/upload-release-asset@master
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: input.rb
