@@ -23,17 +23,22 @@ jobs:
           done
         shell: bash
       - name: Get version
-        run: echo "::set-output name=version::$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')"
+        run: echo "version=v$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')" >> "$GITHUB_OUTPUT"
         id: version
-      - name: release
+      - name: Get changelog
+        run: |
+          num=$(grep -n -m 2 -w "#" CHANGELOG.md | cut -d: -f1 | tail -n1)
+          echo "changelog=$(head -n$(bc -e '$num - 2') CHANGELOG.md)" >> "$GITHUB_OUTPUT"
+        id: changelog
+      - name: Create release
         uses: actions/create-release@v1
         id: create_release
         with:
           draft: false
           prerelease: false
-          release_name: v${{ steps.version.outputs.version }}
-          tag_name: v${{ steps.version.outputs.version }}
-          body_path: CHANGELOG.md
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.version }}
+          body_content: ${{ steps.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload release
