@@ -31,7 +31,11 @@ jobs:
       - name: Get changelog
         run: |
           num=$(echo $(grep -n -m 2 -w "#" CHANGELOG.md | cut -d: -f1 | tail -n1) - 2 | bc)
-          echo "changelog=$(head -n$num CHANGELOG.md)" >> "$GITHUB_OUTPUT"
+          {
+            echo "changelog<<EOF"
+            head -n$num CHANGELOG.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
         id: changelog
       - name: Create release
         uses: actions/create-release@v1
