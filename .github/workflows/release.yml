@@ -13,7 +13,7 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@master
       - name: Get version
-        run: echo "version=v$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')" >> "$GITHUB_OUTPUT"
+        run: echo "version=v$(head -n1 CHANGELOG.md | sed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')" >> "$GITHUB_OUTPUT"
         id: version
       - name: Merge files
         run: |
