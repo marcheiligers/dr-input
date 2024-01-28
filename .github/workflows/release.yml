@@ -12,9 +12,13 @@ jobs:
     steps:
       - name: Checkout main branch
         uses: actions/checkout@master
+      - name: Get version
+        run: echo "version=v$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')" >> "$GITHUB_OUTPUT"
+        id: version
       - name: Merge files
         run: |
           files=$(grep require_relative lib/input.rb | sed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")
+          echo "# dr-input $VERSION" >> input.rb
           grep -v require_relative lib/input.rb >> input.rb
           for file in ${files}
           do
@@ -22,13 +26,12 @@ jobs:
             echo "" >> input.rb
           done
         shell: bash
-      - name: Get version
-        run: echo "version=v$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')" >> "$GITHUB_OUTPUT"
-        id: version
+        env
+          VERSION: ${{ steps.version.outputs.version }}
       - name: Get changelog
         run: |
-          num=$(grep -n -m 2 -w "#" CHANGELOG.md | cut -d: -f1 | tail -n1)
-          echo "changelog=$(head -n$(bc -e '$num - 2') CHANGELOG.md)" >> "$GITHUB_OUTPUT"
+          num=$(echo $(grep -n -m 2 -w "#" CHANGELOG.md | cut -d: -f1 | tail -n1) - 2 | bc)
+          echo "changelog=$(head -n$num) CHANGELOG.md)" >> "$GITHUB_OUTPUT"
         id: changelog
       - name: Create release
         uses: actions/create-release@v1
