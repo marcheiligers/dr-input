@@ -19,9 +19,9 @@ jobs:
         run: |
           files=$(grep require_relative lib/input.rb | sed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")
           echo "# dr-input $VERSION" >> input.rb
-          echo "MIT Licensed" >> input.rb
-          echo "Copyright (c) 2023 Marc Heiligers" >> input.rb
-          echo "See https://github.com/marcheiligers/dr-input" >> input.rb
+          echo "# MIT Licensed" >> input.rb
+          echo "# Copyright (c) 2023 Marc Heiligers" >> input.rb
+          echo "# See https://github.com/marcheiligers/dr-input" >> input.rb
           grep -v require_relative lib/input.rb >> input.rb
           for file in ${files}
           do
