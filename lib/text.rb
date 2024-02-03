@@ -39,10 +39,10 @@ module Input
           copy
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:x)
-          cut
+          @readonly ? copy : cut
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
-          paste
+          paste unless @readonly
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           @shift ? select_to_start : move_to_start
@@ -59,7 +59,7 @@ module Input
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
           # TODO: Treat delete and backspace differently
-          delete_back
+          delete_back unless @readonly
         elsif @down_keys.include?(:left)
           if @shift
             @alt ? select_word_left : select_char_left
@@ -80,7 +80,7 @@ module Input
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
-        insert(text_keys.join(''))
+        insert(text_keys.join('')) unless @readonly
         @ensure_cursor_visible = true
       end
     end

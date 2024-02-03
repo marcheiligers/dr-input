@@ -1,3 +1,11 @@
+# v0.0.9 - 3 January 2024
+
+* Added `readonly` option
+* Fixed a bug where `Multiline` would break if the `value` is `nil` at initialization
+* Fixed a bug where `Multiline#lines` was returning nil
+* Added Log sample app
+* Fixed a bug where when content is shorter than height, mouse is off
+
 # v0.0.8 - 29 October 2023
 
 * Made `handle_mouse` and `on_clicked` smarter to handle right clicks
@@ -88,16 +96,16 @@
 
 # Known Issues and TODO
 
-// Sunday 10/29/23 at 04:42PM - 35 files in 0.13 secs
+// Saturday 02/03/24 at 02:21PM - 40 files in 0.11 secs
 
 ## BUG (2)
-1. lib/base.rb:22               Modifier keys are broken on the web ()
-2. lib/multiline.rb:199         If the first line has only one char, down moves right from the first column
+1. lib/base.rb:23               Modifier keys are broken on the web ()
+2. lib/multiline.rb:201         If the first line has only one char, down moves right from the first column
 
 ## TODO (28)
-1. lib/base.rb:145              cursor size
-2. lib/base.rb:146              cursor color
-3. lib/base.rb:254              Improve walking words
+1. lib/base.rb:148              cursor size
+2. lib/base.rb:149              cursor color
+3. lib/base.rb:257              Improve walking words
 4. lib/line_collection.rb:56    Test `index_at` with multiple different fonts
 5. lib/line_collection.rb:173   prolly need to replace \r\n with \n up front
 6. lib/line_collection.rb:177   consider how to render TAB, maybe convert TAB into 4 spaces?
@@ -115,11 +123,11 @@
 18. lib/input.rb:14             “ghosting text” feature
 19. lib/input.rb:15             Find/Replace (all)
 20. lib/input.rb:16             Replace unavailable chars with [?]
-21. lib/multiline.rb:44         undo/redo
-22. lib/multiline.rb:89         Retain a original_cursor_x when moving up/down to try stay generally in the same x range
-23. lib/multiline.rb:95         beginning of previous paragraph with alt
-24. lib/multiline.rb:104        end of next paragraph with alt
-25. lib/multiline.rb:236        Word selection (double click), All selection (triple click)
-26. lib/multiline.rb:291        Implement line spacing
-27. lib/multiline.rb:301        implement sprite background
-28. lib/multiline.rb:333        Ensure cursor_x doesn't go past the line width
+21. lib/multiline.rb:46         undo/redo
+22. lib/multiline.rb:91         Retain a original_cursor_x when moving up/down to try stay generally in the same x range
+23. lib/multiline.rb:97         beginning of previous paragraph with alt
+24. lib/multiline.rb:106        end of next paragraph with alt
+25. lib/multiline.rb:238        Word selection (double click), All selection (triple click)
+26. lib/multiline.rb:294        Implement line spacing
+27. lib/multiline.rb:304        implement sprite background
+28. lib/multiline.rb:336        Ensure cursor_x doesn't go past the line width

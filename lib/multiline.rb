@@ -1,14 +1,16 @@
 module Input
   class Multiline < Base
-    attr_reader :lines
-
     def initialize(**params)
-      value = params[:value]
+      value = params[:value] || ''
 
       super
 
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
       @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @font, @size_enum, @w)
+    end
+
+    def lines
+      @value.lines
     end
 
     def draw_override(ffi)
@@ -49,10 +51,10 @@ module Input
           copy
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:x)
-          cut
+          @readonly ? copy : cut
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:v)
-          paste
+          paste unless @readonly
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:g)
           @shift ? find_prev : find_next
@@ -68,7 +70,7 @@ module Input
         end
       elsif text_keys.empty?
         if (@down_keys & DEL_KEYS).any?
-          delete_back
+          delete_back unless @readonly
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
           if @shift
@@ -106,7 +108,7 @@ module Input
             @ensure_cursor_visible = true
           end
         elsif @down_keys.include?(:enter)
-          insert("\n")
+          insert("\n") unless @readonly
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:pageup)
           @shift ? select_page_up : move_page_up
@@ -118,7 +120,7 @@ module Input
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
-        insert(text_keys.join(''))
+        insert(text_keys.join('')) unless @readonly
         @ensure_cursor_visible = true
       end
     end
@@ -234,7 +236,6 @@ module Input
     end
 
     # TODO: Word selection (double click), All selection (triple click)
-    # BUG: When content is shorter than height, mouse is off
     def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       mouse = $args.inputs.mouse
       inside = mouse.inside_rect?(self)
@@ -247,6 +248,7 @@ module Input
       return unless @mouse_down || (mouse.down && inside)
 
       relative_y = @scroll_h - (mouse.y - @y + @content_y)
+      relative_y += @h - @content_h if @content_h < @h
       line = @value.lines[relative_y.idiv(@font_height).cap_min_max(0, @value.lines.length - 1)]
       index = line.index_at(mouse.x - @x + @content_x)
 

@@ -4,6 +4,7 @@ module Input
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
                 :content_x, :content_y, :content_w, :content_h,
                 :scroll_x, :scroll_y, :scroll_w, :scroll_h
+    attr_accessor :readonly
 
     SIZE_ENUM = {
       small: -1,
@@ -110,6 +111,7 @@ module Input
       @scroll_w = @w
       @scroll_h = @h
 
+      @readonly = params[:readonly] || false
       @focussed = params[:focussed] || false
       @will_focus = false # Get the focus at the end of the tick
 
@@ -129,6 +131,7 @@ module Input
 
     def draw_cursor(rt)
       return unless @focussed || @will_focus
+      return if @readonly
 
       @cursor_ticks += @cursor_dir
       alpha = if @cursor_ticks == CURSOR_FULL_TICKS
