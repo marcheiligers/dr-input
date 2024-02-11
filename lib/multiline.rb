@@ -7,6 +7,7 @@ module Input
 
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
       @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @font, @size_enum, @w)
+      @fill_from_bottom = params[:fill_from_bottom] || false
     end
 
     def lines
@@ -65,11 +66,20 @@ module Input
         elsif @down_keys.include?(:right)
           @shift ? select_to_line_end : move_to_line_end
           @ensure_cursor_visible = true
+        elsif @down_keys.include?(:up)
+          @shift ? select_to_start : move_to_start
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:down)
+          @shift ? select_to_end : move_to_end
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
-        if (@down_keys & DEL_KEYS).any?
+        if @down_keys.include?(:delete)
+          delete_forward unless @readonly
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:backspace)
           delete_back unless @readonly
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:left)
@@ -115,6 +125,12 @@ module Input
           @ensure_cursor_visible = true
         elsif @down_keys.include?(:pagedown)
           @shift ? select_page_down : move_page_down
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:home)
+          @shift ? select_to_start : move_to_start
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:end)
+          @shift ? select_to_end : move_to_end
           @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
@@ -193,12 +209,11 @@ module Input
       elsif @selection_end == line.start
         @value.lines[line.number - 1].start
       else
-        @value.lines[line.number - 1].index_at(@cursor_x + @content_x)
+        @value.lines[line.number - 1].index_at(@cursor_x + @scroll_x)
       end
     end
 
     def selection_end_down_index
-      # BUG: If the first line has only one char, down moves right from the first column
       line = @value.lines.line_at(@selection_end)
       if line.number == @value.lines.length - 1
         @selection_end
@@ -211,7 +226,7 @@ module Input
         line = @value.lines[line.number + 2]
         line.new_line? ? line.start + 1 : line.start
       else
-        @value.lines[line.number + 1].index_at(@cursor_x + @content_x)
+        @value.lines[line.number + 1].index_at(@cursor_x + @scroll_x)
       end
     end
 
@@ -241,16 +256,20 @@ module Input
       inside = mouse.inside_rect?(self)
 
       if mouse.wheel && inside
-        @content_y += mouse.wheel.y * @mouse_wheel_speed
+        @scroll_y += mouse.wheel.y * @mouse_wheel_speed
         @ensure_cursor_visible = false
       end
 
       return unless @mouse_down || (mouse.down && inside)
 
-      relative_y = @scroll_h - (mouse.y - @y + @content_y)
-      relative_y += @h - @content_h if @content_h < @h
+      if @fill_from_bottom
+        relative_y = @content_h < @h ? @y - mouse.y + @content_h : @scroll_h - (mouse.y - @y + @scroll_y)
+      else
+        relative_y = @scroll_h - (mouse.y - @y + @scroll_y)
+        relative_y += @h - @content_h if @content_h < @h
+      end
       line = @value.lines[relative_y.idiv(@font_height).cap_min_max(0, @value.lines.length - 1)]
-      index = line.index_at(mouse.x - @x + @content_x)
+      index = line.index_at(mouse.x - @x + @scroll_x)
 
       if @mouse_down # dragging
         @selection_end = index
@@ -307,9 +326,14 @@ module Input
       if @value.empty?
         @cursor_line = 0
         @cursor_x = 0
-        @cursor_y = @h - @font_height
-        @content_x = 0
-        rt.primitives << { x: 0, y: @h - @font_height, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+        @scroll_x = 0
+        if @fill_from_bottom
+          @cursor_y = 0
+          rt.primitives << { x: 0, y: 0, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+        else
+          @cursor_y = @h - @font_height
+          rt.primitives << { x: 0, y: @h - @font_height, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+        end
       else
         # CURSOR AND SCROLL LOCATION
         @cursor_line = lines.line_at(@selection_end)
@@ -321,33 +345,38 @@ module Input
         end
 
         @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
-        @cursor_y += @h - @content_h if @content_h < @h
+        @cursor_y += @fill_from_bottom ? @content_h : @h - @content_h if @content_h < @h
         if @scroll_h <= @h # total height is less than height of the control
-          @content_y = 0
+          @scroll_y = @fill_from_bottom ? @scroll_h : 0
         elsif @ensure_cursor_visible
-          if @cursor_y + @font_height > @content_y + @content_h
-            @content_y = @cursor_y + @font_height - @content_h
-          elsif @cursor_y < @content_y
-            @content_y = @cursor_y
+          if @cursor_y + @font_height > @scroll_y + @content_h
+            @scroll_y = @cursor_y + @font_height - @content_h
+          elsif @cursor_y < @scroll_y
+            @scroll_y = @cursor_y
           end
         else
-          @content_y = @content_y.cap_min_max(0, @scroll_h - @h)
+          @scroll_y = @scroll_y.cap_min_max(0, @scroll_h - @h)
         end
-        # TODO: Ensure cursor_x doesn't go past the line width
         @cursor_x = @cursor_line.measure_to(@cursor_index).lesser(@w)
+        @ensure_cursor_visible = false
 
         selection_start = @selection_start.lesser(@selection_end)
         selection_end = @selection_start.greater(@selection_end)
         selection_visible = selection_start != selection_end
 
-        content_bottom = @content_y - @font_height # internal use only, includes font_height, used for draw
-        content_top = @content_y + @content_h # internal use only, used for draw
-        selection_h = @font_height + @padding * 2
+        content_bottom = @scroll_y - @font_height # internal use only, includes font_height, used for draw
+        content_top = @scroll_y + @content_h # internal use only, used for draw
+        selection_h = @font_height
 
-        i = (@scroll_h - content_top).idiv(@font_height).greater(0) - 1
-        l = (@scroll_h - content_bottom).idiv(@font_height).lesser(lines.length)
-        b = @scroll_h - @padding - @content_y
-        b += @h - @content_h if @content_h < @h
+        b = @scroll_h - @padding - @scroll_y
+        if @content_h < @h
+          i = -1
+          l = lines.length
+          b += @fill_from_bottom ? @content_h : @h - @content_h
+        else
+          i = (@scroll_h - content_top).idiv(@font_height).greater(0) - 1
+          l = (@scroll_h - content_bottom).idiv(@font_height).lesser(lines.length)
+        end
         while (i += 1) < l
           line = lines[i]
           y = b - (i + 1) * @font_height
@@ -356,7 +385,7 @@ module Input
           if selection_visible && selection_start <= line.end && selection_end >= line.start
             left = line.measure_to((selection_start - line.start).greater(0))
             right = line.measure_to((selection_end - line.start).lesser(line.length))
-            rt.primitives << { x: left, y: y + @padding, w: right - left, h: selection_h }.solid!(sc)
+            rt.primitives << { x: left, y: y, w: right - left, h: selection_h }.solid!(sc)
           end
 
           # TEXT FOR LINE

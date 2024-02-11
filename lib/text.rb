@@ -57,8 +57,9 @@ module Input
           @on_unhandled_key.call(@down_keys.first, self)
         end
       elsif text_keys.empty?
-        if (@down_keys & DEL_KEYS).any?
-          # TODO: Treat delete and backspace differently
+        if @down_keys.include?(:delete)
+          delete_forward unless @readonly
+        elsif @down_keys.include?(:backspace)
           delete_back unless @readonly
         elsif @down_keys.include?(:left)
           if @shift
@@ -76,6 +77,12 @@ module Input
             @alt ? move_word_right : move_char_right
             @ensure_cursor_visible = true
           end
+        elsif @down_keys.include?(:home)
+          @shift ? select_to_start : move_to_start
+          @ensure_cursor_visible = true
+        elsif @down_keys.include?(:end)
+          @shift ? select_to_end : move_to_end
+          @ensure_cursor_visible = true
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
@@ -91,14 +98,14 @@ module Input
 
       if mouse.wheel && mouse.inside_rect?(self)
         d = mouse.wheel.x == 0 ? mouse.wheel.y : mouse.wheel.x
-        @content_x += d * @mouse_wheel_speed
+        @scroll_x += d * @mouse_wheel_speed
         @ensure_cursor_visible = false
       end
 
       return unless @mouse_down || (mouse.down && mouse.inside_rect?(self))
 
       if @mouse_down # dragging
-        index = find_index_at_x(mouse.x - @x + @content_x)
+        index = find_index_at_x(mouse.x - @x + @scroll_x)
         @selection_end = index
         @mouse_down = false if mouse.up
       else
@@ -107,7 +114,7 @@ module Input
 
         @mouse_down = true
 
-        index = find_index_at_x(mouse.x - @x + @content_x)
+        index = find_index_at_x(mouse.x - @x + @scroll_x)
         if @shift
           @selection_end = index
         else
@@ -162,7 +169,7 @@ module Input
       if @value.empty?
         @cursor_x = 0
         @cursor_y = 0
-        @content_x = 0
+        @scroll_x = 0
         rt.primitives << { x: 0, y: @padding, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
       else
         # CURSOR AND SCROLL LOCATION
@@ -170,33 +177,33 @@ module Input
         @cursor_y = 0
 
         if @content_w < @w
-          @content_x = 0
+          @scroll_x = 0
         elsif @ensure_cursor_visible
-          if @cursor_x > @content_x + @content_w
-            @content_x = @cursor_x - @content_w
-          elsif @cursor_x < @content_x
-            @content_x = @cursor_x
+          if @cursor_x > @scroll_x + @content_w
+            @scroll_x = @cursor_x - @content_w
+          elsif @cursor_x < @scroll_x
+            @scroll_x = @cursor_x
           end
         else
-          @content_x = @content_x.cap_min_max(0, @scroll_w - @w)
+          @scroll_x = @scroll_x.cap_min_max(0, @scroll_w - @w)
         end
 
         # SELECTION
         if @selection_start != @selection_end
           if @selection_start < @selection_end
-            left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
-            right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+            left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
+            right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
           elsif @selection_start > @selection_end
-            left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
-            right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @content_x).cap_min_max(0, @w)
+            left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
+            right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
           end
 
           rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
         end
 
         # TEXT
-        f = find_index_at_x(@content_x)
-        l = find_index_at_x(@content_x + @content_w) + 2
+        f = find_index_at_x(@scroll_x)
+        l = find_index_at_x(@scroll_x + @content_w) + 2
         rt.primitives << { x: 0, y: @padding, text: @value[f, l - f], size_enum: @size_enum, font: @font }.label!(@text_color)
       end
 

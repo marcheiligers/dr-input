@@ -2,9 +2,8 @@ module Input
   class Base
     attr_sprite
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
-                :content_x, :content_y, :content_w, :content_h,
-                :scroll_x, :scroll_y, :scroll_w, :scroll_h
-    attr_accessor :readonly
+                :content_w, :content_h, :scroll_w, :scroll_h
+    attr_accessor :readonly, :scroll_x, :scroll_y
 
     SIZE_ENUM = {
       small: -1,
@@ -25,7 +24,6 @@ module Input
     SHIFT_KEYS = %i[shift_left shift_right shift].freeze
     ALT_KEYS = %i[alt_left alt_right alt].freeze
     CTRL_KEYS = %i[control_left control_right control].freeze
-    DEL_KEYS = %i[delete backspace].freeze
     IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
 
     @@id = 0
@@ -48,45 +46,29 @@ module Input
       @w = params[:w] || 256
       @h = params[:h] || @font_height + @padding * 2
 
-      @text_color = {
+      @text_color = (parse_color_nilable(params, :text) || {
         r: params[:r] || 0,
         g: params[:g] || 0,
         b: params[:b] || 0,
         a: params[:a] || 255,
-        vertical_alignment_enum: 0
-      }
-      @background_color = params[:background_color]
-      @blurred_background_color = params[:blurred_background_color] || @background_color
+      }).merge(vertical_alignment_enum: 0)
+      @background_color = parse_color_nilable(params, :background)
+      @blurred_background_color = parse_color_nilable(params, :blurred) || @background_color
 
       @prompt = params[:prompt] || ''
-      @prompt_color = {
-        r: params[:prompt_r] || 128,
-        g: params[:prompt_g] || 128,
-        b: params[:prompt_b] || 128,
-        a: params[:prompt_a] || 255,
-        vertical_alignment_enum: 0
-      }
+      @prompt_color = parse_color(params, :prompt, 128, 128, 128).merge(vertical_alignment_enum: 0)
 
       @max_length = params[:max_length] || false
 
       @selection_start = params[:selection_start] || params.fetch(:value, '').length
       @selection_end = params[:selection_end] || @selection_start
 
-      @selection_color = {
-        r: params[:selection_r] || 102,
-        g: params[:selection_g] || 178,
-        b: params[:selection_b] || 255,
-        a: params[:selection_a] || 128
-      }
-
-      @blurred_selection_color = {
-        r: params[:blurred_selection_r] || 112,
-        g: params[:blurred_selection_g] || 128,
-        b: params[:blurred_selection_b] || 144,
-        a: params[:blurred_selection_a] || 128
-      }
+      @selection_color = parse_color(params, :selection, 102, 178, 255, 128)
+      @blurred_selection_color = parse_color(params, :blurred_selection, 112, 128, 144, 128)
 
       # To manage the flashing cursor
+      @cursor_color = parse_color(params, :cursor)
+      @cursor_width = params[:cursor_width] || 2
       @cursor_ticks = 0
       @cursor_dir = 1
       @ensure_cursor_visible = true
@@ -101,8 +83,8 @@ module Input
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"
 
-      @content_x = 0
-      @content_y = 0
+      @scroll_x = 0
+      @scroll_y = 0
       @content_w = @w
       @content_h = @h
 
@@ -119,6 +101,44 @@ module Input
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
 
       @value_changed = true
+    end
+
+    def parse_color(params, name, dr = 0, dg = 0, db = 0, da = 255)
+      cp = params["#{name}_color".to_sym]
+      if cp
+        case cp
+        when Array
+          { r: cp[0] || dr, g: cp[1] || dg, b: cp[2] || db, a: cp[3] || da }
+        when Hash
+          { r: cp.r || dr, g: cp.g || dg, b: cp.b || db, a: cp.a || da }
+        when Integer
+          puts "cp = #{cp}"
+          if cp > 0xFFFFFF
+            c = { r: (cp & 0xFF000000) >> 24, g: (cp & 0xFF0000) >> 16, b: (cp & 0xFF00) >> 8, a: cp & 0xFF }
+            puts "big #{c}"
+            c
+          else
+            c = { r: (cp & 0xFF0000) >> 16, g: (cp & 0xFF00) >> 8, b: cp & 0xFF, a: da }
+            puts "little #{c}"
+            c
+          end
+        else
+          raise ArgumentError, "Color #{name} should be an Array or Hash"
+        end
+      else
+        {
+          r: params["#{name}_r".to_sym] || dr,
+          g: params["#{name}_g".to_sym] || dg,
+          b: params["#{name}_b".to_sym] || db,
+          a: params["#{name}_a".to_sym] || da,
+        }
+      end
+    end
+
+    def parse_color_nilable(params, name)
+      return parse_color(params, name) if params["#{name}_color".to_sym] || params["#{name}_r".to_sym] || params["#{name}_g".to_sym] || params["#{name}_b".to_sym] || params["#{name}_a".to_sym]
+
+      nil
     end
 
     def draw_override(_ffi)
@@ -145,18 +165,12 @@ module Input
               else
                 255
               end
-      # TODO: cursor size
-      # TODO: cursor color
       rt.primitives << {
-        x: (@cursor_x - 1).greater(0) - @content_x,
-        y: @cursor_y - @padding - @content_y,
-        w: @padding,
-        h: @font_height + @padding * 2,
-        r: 0,
-        g: 0,
-        b: 0,
-        a: alpha
-      }.solid!
+        x: (@cursor_x - 1).greater(0) - @scroll_x,
+        y: @cursor_y - @padding - @scroll_y,
+        w: @cursor_width,
+        h: @font_height + @padding * 2
+      }.solid!(**@cursor_color, a: alpha)
     end
 
     def tick
@@ -197,17 +211,27 @@ module Input
 
     def insert(str)
       @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
-      if @max_length && @value.length - (@selection_end - @selection_start) + str.length > @max_length
-        str = str[0, @max_length - @value.length + (@selection_end - @selection_start) - str.length]
-        return if str.nil? # too long
-      end
-
-      @value.insert(@selection_start, @selection_end, str)
+      insert_at(str, @selection_start, @selection_end)
 
       @selection_start += str.length
       @selection_end = @selection_start
     end
     alias replace insert
+
+    def insert_at(str, start_at, end_at = start_at)
+      end_at, start_at = start_at, end_at if start_at > end_at
+      if @max_length && @value.length - (end_at - start_at) + str.length > @max_length
+        str = str[0, @max_length - @value.length + (end_at - start_at) - str.length]
+        return if str.nil? # too long
+      end
+
+      @value.insert(start_at, end_at, str)
+    end
+    alias replace_at insert_at
+
+    def append(str)
+      insert_at(str, @value.length)
+    end
 
     def find(text)
       index = @value.index(text)
@@ -373,6 +397,11 @@ module Input
       insert('')
     end
 
+    def delete_forward
+      @selection_start += 1 if @selection_start == @selection_end
+      insert('')
+    end
+
     def paste
       insert($clipboard)
     end
@@ -400,7 +429,7 @@ module Input
     end
 
     def content_rect
-      { x: @content_x, y: @content_y, w: @content_w, h: @content_h }
+      { x: @scroll_x, y: @scroll_y, w: @content_w, h: @content_h }
     end
 
     def scroll_rect

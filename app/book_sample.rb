@@ -14,9 +14,13 @@ def tick(args)
       y: 660,
       w: 1240,
       prompt: 'Title',
-      value: "Alice's Adventures in Wonderland",
+      value: "Alice's Adventures in Wonderland 🐰",
       font: FONT,
       size_enum: :xxxlarge,
+      text_color: { r: 20, g: 20, b: 90 },
+      selection_color: { r: 122, g: 90, b: 90 },
+      cursor_color: 0xFF2020,
+      cursor_width: 3,
       background_color: [220, 220, 220],
       blurred_background_color: [192, 192, 192],
       on_unhandled_key: lambda do |key, input|
@@ -39,7 +43,7 @@ def tick(args)
       prompt: 'Content',
       value: ALICE_IN_WONDERLAND,
       font: FONT,
-      size_enum: :xxxlarge,
+      size_enum: :xxlarge,
       selection_start: 0,
       background_color: [220, 220, 220],
       blurred_background_color: [192, 192, 192],
@@ -61,6 +65,7 @@ def tick(args)
 
   args.state.text.tick
   args.state.multiline.tick
+  args.state.scroller.tick
   args.outputs.primitives << [
     { r: 192, g: 192, b: 192 }.solid!(args.state.text.rect),
     { r: 192, g: 192, b: 192 }.solid!(args.state.multiline.rect),

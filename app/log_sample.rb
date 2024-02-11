@@ -6,6 +6,7 @@ DEBUG_LABEL = { x: 20, r: 80, size_enum: -2, primitive_marker: :label }.freeze
 
 class Button
   attr_sprite
+  attr_reader :on_clicked
 
   def initialize(x, y, w, h, text, on_clicked)
     @mouse_over = false
@@ -59,9 +60,9 @@ DECOR = [
 
 def add_text(text)
   ml = $args.state.multiline
-  ml.selection_start = ml.selection_end = ml.value.length
-  ml.insert("\n") if ml.selection_end != 0
-  ml.insert("[#{ml.lines.length.to_s.rjust(5, '0')}] #{text} and enter a #{ROOMS.sample} with #{WALLS.sample} walls covered in #{DECOR.sample}.")
+  nl = ml.value.length != 0 ? "\n" : ''
+  ml.append("#{nl}[#{ml.lines.length.to_s.rjust(5, '0')}] #{text} and enter a #{ROOMS.sample} with #{WALLS.sample} walls covered in #{DECOR.sample}.")
+  ml.scroll_y = 0
 end
 
 def tick(args)
@@ -79,7 +80,8 @@ def tick(args)
       on_clicked: lambda do |_mouse, input|
         input.focus
       end,
-      readonly: true
+      readonly: true,
+      fill_from_bottom: true
     )
     args.state.text.focus
 
@@ -89,11 +91,14 @@ def tick(args)
       Button.new(240, 20, 200, 40, 'North', ->{ add_text('You go to the North') }),
       Button.new(460, 20, 200, 40, 'South', ->{ add_text('You go to the South') }),
       Button.new(680, 20, 200, 40, 'East', ->{ add_text('You go to the East') }),
+      Button.new(900, 20, 40, 40, '^', ->{ 40.times { args.state.buttons.first(4).sample.on_clicked.call } }),
+      Button.new(1060, 20, 200, 40, 'Clear', ->{ args.state.multiline.value = '' }),
     ]
   end
 
   args.state.multiline.tick
   args.state.buttons.each(&:tick)
+  args.state.scroller.tick
   args.outputs.primitives << [
     { r: 192, g: 192, b: 192 }.solid!(args.state.multiline.rect),
     args.state.multiline,

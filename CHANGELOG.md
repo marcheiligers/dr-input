@@ -1,4 +1,22 @@
-# v0.0.9 - 3 January 2024
+# v0.0.10 - 11 February 2024
+
+* Fixed release date for 0.0.9 below (off by a month)
+* Removed padding from selection highlight to remove overlap in `Multiline`
+* Added `fill_from_bottom` option to `Multiline` for things like logs or game terminals
+* Added color parsing code allowing `text_color`, `background_color`, `blurred_background_color`, `prompt_color`, `selection_color`, and `blurred_selection_color` parameters to be passed as an `Array`, `Hash`, `Integer` or separate `Integer` values with `_r`, `_g`, `_b` and `_a` suffixes
+* Added `cursor_color` and `cursor_width`
+* Added `delete_forward` and started treating delete and backspace correctly
+* Added Basic sample and updated README
+* Implemented `Home` and `End` keys
+* Added `insert_at(str, start_at, end_at)`
+* Added `append(str)`
+* Added `scroll_to(y)`
+* Breaking: renamed `content_y` to `scroll_y` and `content_x` to `scroll_x`
+* Made `scroll_x` and `scroll_y` accessors, and ensured that the `@ensure_cursor_visible` internal variable is correctly reset
+* Updated `Scroller` in samples to react to clicks outside the thumbtrack with page up/down, and dragging the thumbtrack
+* Updated Log sample
+
+# v0.0.9 - 3 February 2024
 
 * Added `readonly` option
 * Fixed a bug where `Multiline` would break if the `value` is `nil` at initialization

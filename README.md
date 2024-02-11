@@ -6,12 +6,15 @@ The Multiline input is fast enough to edit _Alice's Adventures in Wonderland_ (~
 
 ## Usage
 
+Grab the latest single file release `input.rb` from the [Releases](https://github.com/marcheiligers/dr-input/releases) page and save it in your DragonRuby game folder (I'm assuming in a `lib` directory in the sample below).
+
+
 ```ruby
 require 'lib/input.rb'
 
 def tick(args)
   # Create an input
-  args.state.input ||= Input::Text.new(x: 100, y: 600, w: 300)
+  args.state.input ||= Input::Text.new(x: 100, y: 600, w: 300, focussed: true)
 
   # Allow the input to process inputs and render text (render_target)
   args.state.input.tick
@@ -21,6 +24,9 @@ def tick(args)
 
   # Output the input
   args.outputs.primitives << args.state.input
+
+  # Output the value
+  args.outputs.debug << { x: 100, y: 100, text: args.state.input_value }.label!
 end
 ```
 
@@ -28,6 +34,20 @@ See `app/main.rb` for a more complex example.
 
 
 ### Constructor Arguments
+
+#### Colors
+
+Color arguments can be passed as `Hash`es or `Array`s suffixed with `_color`, or individual `Integer` values suffixed with `_r`, `_g`, `_b`, `_a`. In all cases, if a color element is missing, the corresponding default value will be used.
+
+For example, for the `prompt` you can pass:
+* A `prompt_color` as a `Hash`, like `{ r: 100, g: 100, b: 100, a: 255 }`
+* A `prompt_color` as an `Array`, like `[100, 100, 100, 255]`
+* A `prompt_color` as an `Integer`, like `0xFF33BB`
+* Individual `prompt_r`, `prompt_g`, `prompt_b` and `prompt_a` `Integer` values
+
+The argument list below will list `prompt_color` but not the individual `prompt_*` values.
+
+#### Arguments
 
 * `x` - x location, default 0
 * `y` - y location, default 0
@@ -37,29 +57,23 @@ See `app/main.rb` for a more complex example.
 * `padding` - padding, default 2
 * `font` - font path (eg. `'fonts/myfont.ttf'`), default ''
 * `size_enum` - size enumeration (integer), or named size such as `:small`, `:normal`, `:large`, default: `:normal` (`0`)
-* `r` - font color, red component, default 0
-* `g` - font color, green component, default 0
-* `b` - font color, blue component, default 0
-* `a` - font color, alpha component, default 255
+* `text_color` - text color, default `{ r: 0, g: 0, b: 0, a: 255 }`
+* `r` - text color, red component, default 0, used if `text_color` is `nil`
+* `g` - text color, green component, default 0, used if `text_color` is `nil`
+* `b` - text color, blue component, default 0, used if `text_color` is `nil`
+* `a` - text color, alpha component, default 255, used if `text_color` is `nil`
 * `prompt` - prompt text - ghosted text when the control is empty, default ''
-* `prompt_r` - prompt color, red component, default 128
-* `prompt_g` - prompt color, green component, default 128
-* `prompt_b` - prompt color, blue component, default 128
-* `prompt_a` - prompt color, alpha component, default 255
-* `background_color` - background color, can be array or hash format, default nil
-* `blurred_background_color` - background color, can be array or hash format, default `background_color`
+* `prompt_r` - prompt color, default `{ r: 128, g: 128, b: 128, a: 255 }`
+* `cursor_color` - cursor color, default `{ r: 0, g: 0, b: 0, a: 255 }`
+* `cursor_width` - cursor width, default 2
+* `background_color` - background color, default nil (non-nil default components, `{ r: 0, g: 0, b: 0, a: 255 }`)
+* `blurred_background_color` - background color, default `background_color` (non-nil default components, `{ r: 0, g: 0, b: 0, a: 255 }`)
 * `word_chars` - characters considered to be parts of a word, default `('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-']`
 * `punctuation_chars` - charcters considered to be punctuation, default `%w[! % , . ; : ' " \` ) \] } * &]`
 * `selection_start` - start of the selection (if any) in characters (Integer), default the length of the initial value
 * `selection_end` - end of the selection (if any) and the location of the cursor in characters (Integer), default `selection_start`
-* `selection_r` - selection color, red component, default 102
-* `selection_g` - selection color, green component, default 178
-* `selection_b` - selection color, blue component, default 255
-* `selection_a` - selection color, alpha component, default 128
-* `blurred_selection_r` - blurred selection color, red component, default 112
-* `blurred_selection_g` - blurred selection color, green component, default 128
-* `blurred_selection_b` - blurred selection color, blue component, default 144
-* `blurred_selection_a` - blurred selection color, alpha component, default 128
+* `selection_color` - selection color, default `{ r: 102, g: 178, b: 255, a: 128 }`
+* `blurred_selection_color` - blurred selection color, default `{ r: 112, g: 128, b: 144, a: 128 }`
 * `key_repeat_delay` - delay before function key combinations (cursor, cut/copy/paste and so on) begin to repeat in ticks (Integer), default 20
 * `key_repeat_debounce` - number of ticks (Integer) between function key repeat, default 4
 * `word_wrap` - if the control should wrap (Boolean), default false
@@ -68,6 +82,7 @@ See `app/main.rb` for a more complex example.
 * `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
 * `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
 * `max_length` - maximum allowed length (Integer), default `false` which disables length checks
+* `fill_from_bottom` - fill the text from the bottom, like for a log or game terminal, default `false`
 
 ### Attribute accessors
 
@@ -78,12 +93,19 @@ See `app/main.rb` for a more complex example.
 * `content_w` - The width of the full content (`value`) as rendered (readonly, `Text` only)
 * `content_h` - The height of the full content (`value`) as rendered (readonly, `Multiline` only)
 * `rect` - Returns the control's containing rect as a hash (readonly)
-* `readonly` - Returns the control's read only state
+* `readonly` - Returns or sets the control's read only state
+* `scroll_x` - The x position of the full scrollable area as rendered
+* `scroll_y` - The y position of the full scrollable area as rendered. NOTE: `scroll_y = 0` is the bottom
+* `scroll_w` - The width of the full scrollable area as rendered (readonly)
+* `scroll_h` - The height of the full scrollable area as rendered (readonly)
 
 ### Instance Methods
 
 * `#insert(text)` - Inserts text at the cursor location, or replaces if there's a selection
+* `#insert_at(text, start, end = start)` - Inserts text at the start location, or replaces if end != start, without changing the selection
 * `#replace(text)` - Alias for `#insert(text)`
+* `#replace_at(text, start, end = start)` - Alias for `#insert_at(text, start, end = start)`
+* `#append(text)` - Appends text the end of the value, without changing the selection
 * `#current_selection` - Returns the currently selected text
 * `#current_line` - Returns the currently selected line object
 * `#current_word` - Returns the word currently under the cursor
@@ -129,3 +151,4 @@ See `app/main.rb` for a more complex example.
 * @leviondiscord (on Discord, aka @leviongithub) for suggesting `#delete_prefix` when I would have done something much dumber. And also providing other interesting methods I'm likely to use at some point.
 * @DarkGriffin (on Discord) for requesting this control in the first place, and not being shy about the _crazy_ desired feature list (of which, I feel like, I've only touched the surface).
 * @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
+* @cookie (on Discord) for reigniting my interest in building this control by asking about how to use it, finding a new, novel use for it, and pushing me to improve the sample(s).

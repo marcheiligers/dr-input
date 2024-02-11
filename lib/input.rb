@@ -9,7 +9,6 @@ $clipboard = ''
 
 # TODO: Switch clipboard to system clipboard when setclipboard is available
 # TODO: Drag selected text
-# TODO: Home key and End key
 # TODO: Render Squiggly lines
 # TODO: “ghosting text” feature
 # TODO: Find/Replace (all)
