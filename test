@@ -1,3 +1,4 @@
 cd ..
-./dragonruby dr-input --test tests/tests.rb --no-tick
+# ./dragonruby dr-input --test tests/tests.rb --no-tick
+./dragonruby dr-input --test tests/parse_ruby_tests.rb --no-tick
 cd -
