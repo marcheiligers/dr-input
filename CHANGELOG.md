@@ -1,3 +1,7 @@
+# v0.0.11 - 28 April 2024
+
+* Added `{dir}_arrow` to fix cursor keys not working in recent 5.2X versions
+
 # v0.0.10 - 11 February 2024
 
 * Fixed release date for 0.0.9 below (off by a month)
