@@ -60,16 +60,16 @@ module Input
         elsif @down_keys.include?(:g)
           @shift ? find_prev : find_next
           @ensure_cursor_visible = true
-        elsif @down_keys.include?(:left)
+        elsif @down_keys.include?(:left) || @down_keys.include?(:left_arrow)
           @shift ? select_to_line_start : move_to_line_start
           @ensure_cursor_visible = true
-        elsif @down_keys.include?(:right)
+        elsif @down_keys.include?(:right) || @down_keys.include?(:right_arrow)
           @shift ? select_to_line_end : move_to_line_end
           @ensure_cursor_visible = true
-        elsif @down_keys.include?(:up)
+        elsif @down_keys.include?(:up) || @down_keys.include?(:up_arrow)
           @shift ? select_to_start : move_to_start
           @ensure_cursor_visible = true
-        elsif @down_keys.include?(:down)
+        elsif @down_keys.include?(:down) || @down_keys.include?(:down_arrow)
           @shift ? select_to_end : move_to_end
           @ensure_cursor_visible = true
         else
@@ -82,7 +82,7 @@ module Input
         elsif @down_keys.include?(:backspace)
           delete_back unless @readonly
           @ensure_cursor_visible = true
-        elsif @down_keys.include?(:left)
+        elsif @down_keys.include?(:left) || @down_keys.include?(:left_arrow)
           if @shift
             @alt ? select_word_left : select_char_left
             @ensure_cursor_visible = true
@@ -90,7 +90,7 @@ module Input
             @alt ? move_word_left : move_char_left
             @ensure_cursor_visible = true
           end
-        elsif @down_keys.include?(:right)
+        elsif @down_keys.include?(:right) || @down_keys.include?(:right_arrow)
           if @shift
             @alt ? select_word_right : select_char_right
             @ensure_cursor_visible = true
@@ -99,7 +99,7 @@ module Input
             @ensure_cursor_visible = true
           end
         # TODO: Retain a original_cursor_x when moving up/down to try stay generally in the same x range
-        elsif @down_keys.include?(:up)
+        elsif @down_keys.include?(:up) || @down_keys.include?(:up_arrow)
           if @shift
             select_line_up
             @ensure_cursor_visible = true
@@ -108,7 +108,7 @@ module Input
             move_line_up
             @ensure_cursor_visible = true
           end
-        elsif @down_keys.include?(:down)
+        elsif @down_keys.include?(:down) || @down_keys.include?(:down_arrow)
           if @shift
             select_line_down
             @ensure_cursor_visible = true
