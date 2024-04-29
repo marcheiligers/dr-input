@@ -4,7 +4,6 @@ require_relative 'line_collection.rb'
 require_relative 'base.rb'
 require_relative 'text.rb'
 require_relative 'multiline.rb'
-require_relative 'ruby_line_collection.rb'
 
 $clipboard = ''
 
