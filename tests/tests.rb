@@ -28,6 +28,7 @@ def test_calcstringbox_tab_has_no_witdh(_args, assert)
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
+# REVIEW: Are these still needed?
 # def test_find_word_breaks_empty_value(_args, assert)
 #   assert.equal! Input::Multiline.new.find_word_breaks(''), ['']
 # end
@@ -47,10 +48,12 @@ def test_multiline_word_breaks_two_words(_args, assert)
   assert.equal! multiline.lines.map(&:text), ['Hello, ', 'world']
 end
 
+# REVIEW: This one doesn't work anymore when used on the actual Multiline instance
 # def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
 #   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello \t "), [" \t  hello \t "]
 # end
 
+# REVIEW: Is this still needed?
 # def test_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
 #   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
 # end
