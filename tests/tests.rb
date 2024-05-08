@@ -86,6 +86,7 @@ def test_multiline_word_breaks_trailing_new_line(_args, assert)
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n"]
 end
 
+# REVIEW: Are these still needed?
 # def test_perform_word_wrap_multiple_new_lines(_args, assert)
 #   assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n", "\n", "\n2"]).map(&:text), ['1', "\n", "\n", "\n2"]
 # end
