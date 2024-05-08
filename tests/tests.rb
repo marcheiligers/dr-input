@@ -58,9 +58,12 @@ end
 #   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
 # end
 
-# def test_find_word_breaks_new_line(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("hello, \n  world"), ['hello, ', "\n  world"]
-# end
+def test_multiline_word_breaks_new_line(_args, assert)
+  multiline = build_ten_letter_wide_multiline
+  multiline.insert "hello, \n  world"
+
+  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n  world"]
+end
 
 # def test_find_word_breaks_double_new_line(_args, assert)
 #   assert.equal! Input::Multiline.new.find_word_breaks("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
