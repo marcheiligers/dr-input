@@ -42,7 +42,7 @@ end
 # end
 
 def test_multiline_word_breaks_two_words(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert 'Hello, world'
 
   assert.equal! multiline.lines.map(&:text), ['Hello, ', 'world']
@@ -59,28 +59,28 @@ end
 # end
 
 def test_multiline_word_breaks_new_line(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert "hello, \n  world"
 
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n  world"]
 end
 
 def test_multiline_word_breaks_double_new_line(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert "hello, \n\n  world"
 
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n  world"]
 end
 
 def test_multiline_word_breaks_multiple_new_lines(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert "hello, \n\n\n  world"
 
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n", "\n  world"]
 end
 
 def test_multiline_word_breaks_trailing_new_line(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert "hello, \n"
 
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n"]
@@ -112,15 +112,15 @@ end
 # end
 
 def test_multiline_word_breaks_doesnt_break_very_long_word(_args, assert)
-  multiline = build_ten_letter_wide_multiline
+  multiline = build_multiline_input(10)
   multiline.insert 'Supercalifragilisticexpialidocious'
 
   # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
   assert.equal! multiline.lines.map(&:text), ['Supercalifragilisticexpialidocious']
 end
 
-def build_ten_letter_wide_multiline(value = nil)
+def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
-  ten_letters_width, _ = $gtk.calcstringbox('1234567890', 0)
-  Input::Multiline.new(w: ten_letters_width, value: value || '')
+  width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
+  Input::Multiline.new(w: width)
 end
