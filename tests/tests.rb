@@ -65,17 +65,26 @@ def test_multiline_word_breaks_new_line(_args, assert)
   assert.equal! multiline.lines.map(&:text), ['hello, ', "\n  world"]
 end
 
-# def test_find_word_breaks_double_new_line(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
-# end
+def test_multiline_word_breaks_double_new_line(_args, assert)
+  multiline = build_ten_letter_wide_multiline
+  multiline.insert "hello, \n\n  world"
 
-# def test_find_word_breaks_multiple_new_lines(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("1\n\n\n2"), ['1', "\n", "\n", "\n2"]
-# end
+  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n  world"]
+end
 
-# def test_find_word_breaks_trailing_new_line(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("1\n"), ['1', "\n"]
-# end
+def test_multiline_word_breaks_multiple_new_lines(_args, assert)
+  multiline = build_ten_letter_wide_multiline
+  multiline.insert "hello, \n\n\n  world"
+
+  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n", "\n  world"]
+end
+
+def test_multiline_word_breaks_trailing_new_line(_args, assert)
+  multiline = build_ten_letter_wide_multiline
+  multiline.insert "hello, \n"
+
+  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n"]
+end
 
 # def test_perform_word_wrap_multiple_new_lines(_args, assert)
 #   assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n", "\n", "\n2"]).map(&:text), ['1', "\n", "\n", "\n2"]
