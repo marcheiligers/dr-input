@@ -120,6 +120,7 @@ def test_multiline_word_breaks_doesnt_break_very_long_word(_args, assert)
 end
 
 def build_ten_letter_wide_multiline(value = nil)
+  # This works because the default DR font is monospaced
   ten_letters_width, _ = $gtk.calcstringbox('1234567890', 0)
   Input::Multiline.new(w: ten_letters_width, value: value || '')
 end
