@@ -40,9 +40,12 @@ end
 #   assert.equal! Input::Multiline.new.find_word_breaks('a'), ['a']
 # end
 
-# def test_find_word_breaks_2_words(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks('hello, world'), ['hello, ', 'world']
-# end
+def test_multiline_word_breaks_two_words(_args, assert)
+  multiline = build_ten_letter_wide_multiline
+  multiline.insert 'Hello, world'
+
+  assert.equal! multiline.lines.map(&:text), ['Hello, ', 'world']
+end
 
 # def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
 #   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello \t "), [" \t  hello \t "]
@@ -91,3 +94,8 @@ end
 # def test_perform_word_wrap_trailing_new_line_after_wrap(args, assert)
 #   assert.equal! Input::Multiline.new.perform_word_wrap(['', '']), ["1\n", '']
 # end
+
+def build_ten_letter_wide_multiline(value = nil)
+  ten_letters_width, _ = $gtk.calcstringbox('1234567890', 0)
+  Input::Multiline.new(w: ten_letters_width, value: value || '')
+end
