@@ -80,9 +80,14 @@ def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
   assert.equal! omg_test_the_thing("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
 end
 
-def test_multiline_word_breaks_doesnt_break_very_long_word(_args, assert)
+def test_multiline_word_breaks_a_very_long_word(_args, assert)
   # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
-  assert.equal! omg_test_the_thing('Supercalifragilisticexpialidocious'), ['Supercalifragilisticexpialidocious']
+  assert.equal! omg_test_the_thing('Supercalifragilisticexpialidocious'), ['Supercalif', 'ragilistic', 'expialidoc', 'ious']
+end
+
+def test_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_args, assert)
+  # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
+  assert.equal! omg_test_the_thing('Super califragilisticexpialidocious'), ['Super cali', 'fragilisti', 'cexpialido', 'cious']
 end
 
 def build_multiline_input(width_in_letters)
