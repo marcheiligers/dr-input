@@ -228,8 +228,27 @@ module Input
         else
           w, = $gtk.calcstringbox((line + word).rstrip, @size_enum, @font)
           if w > width
-            lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font, @size_enum)
-            first_line_start = lines.last.end
+            if line != ''
+              lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font, @size_enum)
+              first_line_start = lines.last.end
+            end
+
+            # break up long words
+            w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+            while w > width
+              n = word.length
+              while w > width
+                n -= 1
+                w, = $gtk.calcstringbox(word[0, n].rstrip, @size_enum, @font)
+                if w <= width
+                  lines << Line.new(lines.length + first_line_number, first_line_start, word[0, n], true, @font, @size_enum)
+                  first_line_start = lines.last.end
+                  word = word[n, word.length]
+                end
+              end
+
+              w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+            end
             line = word
           elsif word.start_with?("\n")
             unless line == ''
