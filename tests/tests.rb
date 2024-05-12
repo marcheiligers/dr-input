@@ -28,99 +28,71 @@ def test_calcstringbox_tab_has_no_witdh(_args, assert)
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
-# REVIEW: Are these still needed?
-# def test_find_word_breaks_empty_value(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks(''), ['']
-# end
+def test_find_word_breaks_empty_value(_args, assert)
+  assert.equal! omg_test_the_thing(''), ['']
+end
 
-# def test_find_word_breaks_single_space(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks(' '), [' ']
-# end
+def test_find_word_breaks_single_space(_args, assert)
+  assert.equal! omg_test_the_thing(' '), [' ']
+end
 
-# def test_find_word_breaks_single_char(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks('a'), ['a']
-# end
+def test_find_word_breaks_single_char(_args, assert)
+  assert.equal! omg_test_the_thing('a'), ['a']
+end
 
 def test_multiline_word_breaks_two_words(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert 'Hello, world'
-
-  assert.equal! multiline.lines.map(&:text), ['Hello, ', 'world']
+  assert.equal! omg_test_the_thing('Hello, world'), ['Hello, ', 'world']
 end
 
-# REVIEW: This one doesn't work anymore when used on the actual Multiline instance
-# def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello \t "), [" \t  hello \t "]
-# end
-
-# REVIEW: Is this still needed?
-# def test_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
-# end
-
-def test_multiline_word_breaks_new_line(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert "hello, \n  world"
-
-  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n  world"]
+def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
+  assert.equal! omg_test_the_thing(" \t  hello \t "), [" \t  hello \t "]
 end
 
-def test_multiline_word_breaks_double_new_line(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert "hello, \n\n  world"
-
-  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n  world"]
-end
-
-def test_multiline_word_breaks_multiple_new_lines(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert "hello, \n\n\n  world"
-
-  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n", "\n", "\n  world"]
+def test_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
+  assert.equal! omg_test_the_thing(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
 end
 
 def test_multiline_word_breaks_trailing_new_line(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert "hello, \n"
-
-  assert.equal! multiline.lines.map(&:text), ['hello, ', "\n"]
+  assert.equal! omg_test_the_thing("hello, \n"), ['hello, ', "\n"]
 end
 
-# REVIEW: Are these still needed?
-# def test_perform_word_wrap_multiple_new_lines(_args, assert)
-#   assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n", "\n", "\n2"]).map(&:text), ['1', "\n", "\n", "\n2"]
-# end
+def test_multiline_word_breaks_new_line(_args, assert)
+  assert.equal! omg_test_the_thing("hello, \n  world"), ['hello, ', "\n  world"]
+end
 
-# def test_perform_word_wrap_trailing_new_line(_args, assert)
-#   assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n"]).map(&:text), ['1', "\n"]
-# end
+def test_multiline_word_breaks_double_new_line(_args, assert)
+  assert.equal! omg_test_the_thing("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
+end
 
-# def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
-# end
+def test_multiline_word_breaks_multiple_new_lines(_args, assert)
+  assert.equal! omg_test_the_thing("hello, \n\n\n  world"), ['hello, ', "\n", "\n", "\n  world"]
+end
 
-# def test_perform_word_wrap_trailing_new_line_after_wrap(_args, assert)
-#   assert.equal! Input::Multiline.new.perform_word_wrap(['1234567890 ', '1234567890 ', '1234567890', "\n"]).map(&:text), ['1234567890 1234567890 ', '1234567890', "\n"]
-# end
+def test_perform_word_wrap_multiple_new_lines(_args, assert)
+  assert.equal! omg_test_the_thing("1\n\n\n2"), ['1', "\n", "\n", "\n2"]
+end
 
-# def test_find_word_breaks_trailing_new_line_after_wrap_with_space(_args, assert)
-#   assert.equal! Input::Multiline.new.find_word_breaks("1234567890 1234567890 \n"), ['1234567890 ', '1234567890 ', "\n"]
-# end
+def test_perform_word_wrap_trailing_new_line(_args, assert)
+  assert.equal! omg_test_the_thing("1\n"), ['1', "\n"]
+end
 
-# def test_perform_word_wrap_trailing_new_line_after_wrap(args, assert)
-#   assert.equal! Input::Multiline.new.perform_word_wrap(['', '']), ["1\n", '']
-# end
+def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
+  assert.equal! omg_test_the_thing("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
+end
 
 def test_multiline_word_breaks_doesnt_break_very_long_word(_args, assert)
-  multiline = build_multiline_input(10)
-  multiline.insert 'Supercalifragilisticexpialidocious'
-
   # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
-  assert.equal! multiline.lines.map(&:text), ['Supercalifragilisticexpialidocious']
+  assert.equal! omg_test_the_thing('Supercalifragilisticexpialidocious'), ['Supercalifragilisticexpialidocious']
 end
 
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
   Input::Multiline.new(w: width)
+end
+
+def omg_test_the_thing(string, width_in_letters = 10)
+  multiline = build_multiline_input(10)
+  multiline.insert string
+  multiline.lines.map(&:text)
 end
