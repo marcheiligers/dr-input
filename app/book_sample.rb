@@ -82,7 +82,7 @@ def tick(args)
   args.outputs.primitives << { y: 658, text: "#{args.state.text.value.length}/40", **DEBUG_LABEL, x: 1220 }
   args.outputs.primitives << { y: 140, text: "Simple Value: #{nval}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 110, text: "Wrapping Value (#{wval.length}): #{wval.gsub("\n", '\n')}" }.label!(DEBUG_LABEL)
-  args.outputs.primitives << { y: 90, text: "Current word: #{args.state.multiline.current_word}", **DEBUG_LABEL }
+  # args.outputs.primitives << { y: 90, text: "Current word: #{args.state.multiline.current_word}", **DEBUG_LABEL }
   args.outputs.primitives << { y: 70, text: "Current line: #{args.state.multiline.current_line.inspect}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 40, text: "Clipboard: #{$clipboard}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 20, text: "Content rect: #{args.state.multiline.content_rect}, Scroll rect: #{args.state.multiline.scroll_rect}" }.label!(DEBUG_LABEL)
