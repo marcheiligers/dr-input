@@ -88,6 +88,13 @@ def test_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_
   assert.equal! word_wrap_result('Super califragilisticexpialidocious'), ['Super ', 'califragil', 'isticexpia', 'lidocious']
 end
 
+def test_default_height_is_calculated_from_padding_and_font_height(_args, assert)
+  _, font_height = $gtk.calcstringbox('A', 0)
+  text_input = Input::Text.new(padding: 10)
+
+  assert.equal! text_input.h, font_height + 20
+end
+
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
