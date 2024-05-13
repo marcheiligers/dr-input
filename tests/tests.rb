@@ -81,12 +81,10 @@ def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
 end
 
 def test_multiline_word_breaks_a_very_long_word(_args, assert)
-  # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
   assert.equal! word_wrap_result('Supercalifragilisticexpialidocious'), ['Supercalif', 'ragilistic', 'expialidoc', 'ious']
 end
 
 def test_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_args, assert)
-  # REVIEW: This breaks and actually returns ["", "Supercalifragilisticexpialidocious"] - is this behavior as intended?
   assert.equal! word_wrap_result('Super califragilisticexpialidocious'), ['Super ', 'califragil', 'isticexpia', 'lidocious']
 end
 
