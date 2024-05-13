@@ -216,8 +216,8 @@ module Input
       lines = LineCollection.new(@font, @size_enum)
       line = ''
       i = -1
-      l = words.length
-      while (i += 1) < l
+      le = words.length
+      while (i += 1) < le
         word = words[i]
         if word == "\n"
           unless line == ''
@@ -228,8 +228,53 @@ module Input
         else
           w, = $gtk.calcstringbox((line + word).rstrip, @size_enum, @font)
           if w > width
-            lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font, @size_enum)
-            first_line_start = lines.last.end
+            unless line == ''
+              lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font, @size_enum)
+              first_line_start = lines.last.end
+            end
+
+            # break up long words
+            w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+            # TODO: make this a binary search
+            while w > width
+              r = word.length - 1
+              l = 0
+              m = r.idiv(2)
+              w, = $gtk.calcstringbox(word[0, m].rstrip, @size_enum, @font)
+              loop do
+                if w == width
+                  # Whoa, add this
+                  lines << Line.new(lines.length + first_line_number, first_line_start, word[0, m], true, @font, @size_enum)
+                  first_line_start = lines.last.end
+                  word = word[m, word.length]
+                  break
+                elsif w < width
+                  if r - l <= 1
+                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, r], true, @font, @size_enum)
+                    first_line_start = lines.last.end
+                    word = word[r, word.length]
+                    break
+                  end
+
+                  # go right
+                  l = m + 1
+                  m = (l + r).idiv(2)
+                elsif w > width
+                  if r - l <= 1
+                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, l], true, @font, @size_enum)
+                    first_line_start = lines.last.end
+                    word = word[l, word.length]
+                    break
+                  end
+
+                  # go left
+                  r = m - 1
+                  m = (l + r).idiv(2)
+                end
+                w, = $gtk.calcstringbox(word[0, m].rstrip, @size_enum, @font)
+              end
+              w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+            end
             line = word
           elsif word.start_with?("\n")
             unless line == ''

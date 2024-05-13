@@ -29,65 +29,73 @@ def test_calcstringbox_tab_has_no_witdh(_args, assert)
 end
 
 def test_find_word_breaks_empty_value(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks(''), ['']
+  assert.equal! word_wrap_result(''), ['']
 end
 
 def test_find_word_breaks_single_space(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks(' '), [' ']
+  assert.equal! word_wrap_result(' '), [' ']
 end
 
 def test_find_word_breaks_single_char(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks('a'), ['a']
+  assert.equal! word_wrap_result('a'), ['a']
 end
 
-def test_find_word_breaks_2_words(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks('hello, world'), ['hello, ', 'world']
+def test_multiline_word_breaks_two_words(_args, assert)
+  assert.equal! word_wrap_result('Hello, world'), ['Hello, ', 'world']
 end
 
 def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello \t "), [" \t  hello \t "]
+  assert.equal! word_wrap_result(" \t  hello \t "), [" \t  hello \t "]
 end
 
 def test_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
+  assert.equal! word_wrap_result(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
 end
 
-def test_find_word_breaks_new_line(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("hello, \n  world"), ['hello, ', "\n  world"]
+def test_multiline_word_breaks_trailing_new_line(_args, assert)
+  assert.equal! word_wrap_result("hello, \n"), ['hello, ', "\n"]
 end
 
-def test_find_word_breaks_double_new_line(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
+def test_multiline_word_breaks_new_line(_args, assert)
+  assert.equal! word_wrap_result("hello, \n  world"), ['hello, ', "\n  world"]
 end
 
-def test_find_word_breaks_multiple_new_lines(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("1\n\n\n2"), ['1', "\n", "\n", "\n2"]
+def test_multiline_word_breaks_double_new_line(_args, assert)
+  assert.equal! word_wrap_result("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
 end
 
-def test_find_word_breaks_trailing_new_line(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("1\n"), ['1', "\n"]
+def test_multiline_word_breaks_multiple_new_lines(_args, assert)
+  assert.equal! word_wrap_result("hello, \n\n\n  world"), ['hello, ', "\n", "\n", "\n  world"]
 end
 
 def test_perform_word_wrap_multiple_new_lines(_args, assert)
-  assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n", "\n", "\n2"]).map(&:text), ['1', "\n", "\n", "\n2"]
+  assert.equal! word_wrap_result("1\n\n\n2"), ['1', "\n", "\n", "\n2"]
 end
 
 def test_perform_word_wrap_trailing_new_line(_args, assert)
-  assert.equal! Input::Multiline.new.perform_word_wrap(['1', "\n"]).map(&:text), ['1', "\n"]
+  assert.equal! word_wrap_result("1\n"), ['1', "\n"]
 end
 
 def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
+  assert.equal! word_wrap_result("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
 end
 
-def test_perform_word_wrap_trailing_new_line_after_wrap(_args, assert)
-  assert.equal! Input::Multiline.new.perform_word_wrap(['1234567890 ', '1234567890 ', '1234567890', "\n"]).map(&:text), ['1234567890 1234567890 ', '1234567890', "\n"]
+def test_multiline_word_breaks_a_very_long_word(_args, assert)
+  assert.equal! word_wrap_result('Supercalifragilisticexpialidocious'), ['Supercalif', 'ragilistic', 'expialidoc', 'ious']
 end
 
-def test_find_word_breaks_trailing_new_line_after_wrap_with_space(_args, assert)
-  assert.equal! Input::Multiline.new.find_word_breaks("1234567890 1234567890 \n"), ['1234567890 ', '1234567890 ', "\n"]
+def test_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_args, assert)
+  assert.equal! word_wrap_result('Super califragilisticexpialidocious'), ['Super ', 'califragil', 'isticexpia', 'lidocious']
 end
 
-# def test_perform_word_wrap_trailing_new_line_after_wrap(args, assert)
-#   assert.equal! Input::Multiline.new.perform_word_wrap(['', '']), ["1\n", '']
-# end
+def build_multiline_input(width_in_letters)
+  # This works because the default DR font is monospaced
+  width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
+  Input::Multiline.new(w: width)
+end
+
+def word_wrap_result(string, width_in_letters = 10)
+  multiline = build_multiline_input(10)
+  multiline.insert string
+  multiline.lines.map(&:text)
+end

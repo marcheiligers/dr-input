@@ -1,3 +1,8 @@
+# v0.0.12 - 12 May 2024
+
+* Fixes wrapping of words longer than the width of the multi-line input
+* Fixes tests, such as they are
+
 # v0.0.11 - 28 April 2024
 
 * Added `{dir}_arrow` to fix cursor keys not working in recent 5.2X versions
