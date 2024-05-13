@@ -33,7 +33,7 @@ module Input
       @y = params[:y] || 0
 
       @font = params[:font].to_s
-      @size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, :size_enum)
+      @size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, params[:size_enum])
 
       word_chars = (params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-'])
       _, @font_height = $gtk.calcstringbox(word_chars.join(''), @size_enum, @font)
