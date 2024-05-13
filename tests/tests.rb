@@ -112,6 +112,40 @@ def test_multiline_scrolls_in_font_height_steps_by_default(args, assert)
   assert.equal! input.scroll_y, font_height
 end
 
+def test_text_click_inside_sets_selection(args, assert)
+  $args = args
+  three_letters_width, _ = $gtk.calcstringbox('ABC', 0)
+  input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEF', focussed: true)
+
+  mouse_is_at(100 + three_letters_width, 105)
+  args.mouse.click = true
+  input.tick
+
+  args.mouse.click = false
+  input.tick
+
+  assert.equal! input.selection_start, 3
+  assert.equal! input.selection_end, 3
+end
+
+def test_text_drag_inside_sets_selection(args, assert)
+  $args = args
+  three_letters_width, _ = $gtk.calcstringbox('ABC', 0)
+  six_letters_width, _ = $gtk.calcstringbox('ABCDEF', 0)
+  input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEFGH', focussed: true)
+
+  mouse_is_at(100 + three_letters_width, 105)
+  args.mouse.click = true
+  input.tick
+
+  mouse_is_at(100 + six_letters_width, 105)
+  args.mouse.click = false
+  input.tick
+
+  assert.equal! input.selection_start, 3
+  assert.equal! input.selection_end, 6
+end
+
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
@@ -124,7 +158,14 @@ def word_wrap_result(string, width_in_letters = 10)
   multiline.lines.map(&:text)
 end
 
+def mouse_is_at(x, y)
+  $args.inputs.mouse.x = x
+  $args.inputs.mouse.y = y
+end
+
 def mouse_is_inside(rect)
-  $args.inputs.mouse.x = rect.x + rect.w.half
-  $args.inputs.mouse.y = rect.y + rect.h.half
+  mouse_is_at(
+    rect.x + rect.w.half,
+    rect.y + rect.h.half
+  )
 end
