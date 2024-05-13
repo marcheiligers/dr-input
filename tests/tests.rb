@@ -90,7 +90,7 @@ end
 
 def test_default_height_is_calculated_from_padding_and_font_height(_args, assert)
   _, font_height = $gtk.calcstringbox('A', 0)
-  text_input = Input::Text.new(padding: 10)
+  text_input = Input::Text.new(padding: 10, size_enum: 0)
 
   assert.equal! text_input.h, font_height + 20
 end
