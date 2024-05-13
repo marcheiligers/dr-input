@@ -95,6 +95,23 @@ def test_default_height_is_calculated_from_padding_and_font_height(_args, assert
   assert.equal! text_input.h, font_height + 20
 end
 
+def test_multiline_scrolls_in_font_height_steps_by_default(args, assert)
+  $args = args
+  _, font_height = $gtk.calcstringbox('A', 0)
+  input = Input::Multiline.new(x: 100, y: 100, w: 100, size_enum: 0)
+  input.insert "line 1\n"
+  input.insert "line 2\n"
+  input.insert "line 3\n"
+
+  assert.equal! input.scroll_y, 0
+
+  mouse_is_inside(input)
+  args.inputs.mouse.wheel = { y: 1 }
+  input.tick
+
+  assert.equal! input.scroll_y, font_height
+end
+
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
@@ -105,4 +122,9 @@ def word_wrap_result(string, width_in_letters = 10)
   multiline = build_multiline_input(10)
   multiline.insert string
   multiline.lines.map(&:text)
+end
+
+def mouse_is_inside(rect)
+  $args.inputs.mouse.x = rect.x + rect.w.half
+  $args.inputs.mouse.y = rect.y + rect.h.half
 end
