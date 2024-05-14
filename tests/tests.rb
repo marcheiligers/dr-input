@@ -114,10 +114,10 @@ end
 
 def test_text_click_inside_sets_selection(args, assert)
   $args = args
-  three_letters_width, _ = $gtk.calcstringbox('ABC', 0)
+  three_letters_wide, _ = $gtk.calcstringbox('ABC', 0)
   input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEF', focussed: true)
 
-  mouse_is_at(100 + three_letters_width, 105)
+  mouse_is_inside(input, x: 100 + three_letters_wide)
   args.mouse.click = true
   input.tick
 
@@ -130,15 +130,15 @@ end
 
 def test_text_drag_inside_sets_selection(args, assert)
   $args = args
-  three_letters_width, _ = $gtk.calcstringbox('ABC', 0)
-  six_letters_width, _ = $gtk.calcstringbox('ABCDEF', 0)
+  three_letters_wide, _ = $gtk.calcstringbox('ABC', 0)
+  six_letters_wide, _ = $gtk.calcstringbox('ABCDEF', 0)
   input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEFGH', focussed: true)
 
-  mouse_is_at(100 + three_letters_width, 105)
+  mouse_is_inside(input, x: 100 + three_letters_wide)
   args.mouse.click = true
   input.tick
 
-  mouse_is_at(100 + six_letters_width, 105)
+  mouse_is_inside(input, x: 100 + six_letters_wide)
   args.mouse.click = false
   input.tick
 
@@ -163,9 +163,9 @@ def mouse_is_at(x, y)
   $args.inputs.mouse.y = y
 end
 
-def mouse_is_inside(rect)
+def mouse_is_inside(rect, x: nil)
   mouse_is_at(
-    rect.x + rect.w.half,
+    x || rect.x + rect.w.half,
     rect.y + rect.h.half
   )
 end
