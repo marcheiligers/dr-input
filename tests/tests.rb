@@ -145,6 +145,40 @@ def test_text_drag_inside_sets_selection(args, assert)
   assert.equal! input.selection_end, 6
 end
 
+def test_multiline_click_inside_sets_selection(args, assert)
+  $args = args
+  three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
+  input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
+
+  mouse_is_at(100 + three_letters_wide, 105)
+  mouse_down
+  input.tick
+  mouse_up
+  input.tick
+
+
+  # 10 = ABCDEF\nGHI
+  assert.equal! input.selection_start, 10
+  assert.equal! input.selection_end, 10
+end
+
+def test_text_drag_inside_sets_selection(args, assert)
+  $args = args
+  three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
+  input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
+
+  mouse_is_at(100 + three_letters_wide, 105 + font_height)
+  mouse_down
+  input.tick
+
+  mouse_is_at(100 + three_letters_wide, 105)
+  mouse_up
+  input.tick
+
+  assert.equal! input.selection_start, 3
+  assert.equal! input.selection_end, 10
+end
+
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
