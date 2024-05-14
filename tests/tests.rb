@@ -118,10 +118,10 @@ def test_text_click_inside_sets_selection(args, assert)
   input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEF', focussed: true)
 
   mouse_is_inside(input, x: 100 + three_letters_wide)
-  args.mouse.click = true
+  mouse_down
   input.tick
 
-  args.mouse.click = false
+  mouse_up
   input.tick
 
   assert.equal! input.selection_start, 3
@@ -135,11 +135,10 @@ def test_text_drag_inside_sets_selection(args, assert)
   input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEFGH', focussed: true)
 
   mouse_is_inside(input, x: 100 + three_letters_wide)
-  args.mouse.click = true
+  mosue_down
   input.tick
-
   mouse_is_inside(input, x: 100 + six_letters_wide)
-  args.mouse.click = false
+  mouse_up
   input.tick
 
   assert.equal! input.selection_start, 3
@@ -168,4 +167,16 @@ def mouse_is_inside(rect, x: nil)
     x || rect.x + rect.w.half,
     rect.y + rect.h.half
   )
+end
+
+def mouse_down
+  $args.inputs.mouse.button_left = true
+  $args.inputs.mouse.click = GTK::MousePoint.new($args.inputs.mouse.x, $args.inputs.mouse.y)
+  $args.inputs.mouse.up = false
+end
+
+def mouse_up
+  $args.inputs.mouse.button_left = false
+  $args.inputs.mouse.click = nil
+  $args.inputs.mouse.up = true
 end
