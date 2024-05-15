@@ -149,8 +149,9 @@ def test_multiline_click_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
   input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
+  inside_second_line_y = input.y + font_height.half
 
-  mouse_is_at(100 + three_letters_wide, 105)
+  mouse_is_at(100 + three_letters_wide, inside_second_line_y)
   mouse_down
   input.tick
   mouse_up
@@ -166,12 +167,14 @@ def test_text_drag_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
   input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
+  inside_second_line_y = input.y + font_height.half
+  inside_first_line_y = inside_second_line_y + font_height
 
-  mouse_is_at(100 + three_letters_wide, 105 + font_height)
+  mouse_is_at(100 + three_letters_wide, inside_first_line_y)
   mouse_down
   input.tick
 
-  mouse_is_at(100 + three_letters_wide, 105)
+  mouse_is_at(100 + three_letters_wide, inside_second_line_y)
   mouse_up
   input.tick
 
