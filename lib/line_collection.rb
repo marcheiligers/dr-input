@@ -66,14 +66,12 @@ module Input
   end
 
   class LineCollection
-    attr_reader :text_length, :lines
+    attr_reader :lines
 
     include Enumerable
 
-    def initialize(font, size_enum, lines = [])
+    def initialize(lines = [])
       @lines = lines
-      @font = font
-      @size_enum = size_enum
     end
 
     def each
@@ -131,7 +129,7 @@ module Input
         line = @lines[i += 1]
       end
 
-      LineCollection.new(@font, @size_enum, modified_lines)
+      LineCollection.new(modified_lines)
     end
 
     def text
@@ -213,7 +211,7 @@ module Input
 
     def perform_word_wrap(text, width, first_line_number = 0, first_line_start = 0)
       words = find_word_breaks(text)
-      lines = LineCollection.new(@font, @size_enum)
+      lines = LineCollection.new
       line = ''
       i = -1
       le = words.length
