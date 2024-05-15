@@ -10,4 +10,8 @@ class FontStyle
   def string_width(str)
     $gtk.calcstringbox(str, @size_enum, @font)[0]
   end
+
+  def label(values)
+    { size_enum: @size_enum, font: @font, **values }
+  end
 end

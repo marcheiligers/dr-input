@@ -170,7 +170,7 @@ module Input
         @cursor_x = 0
         @cursor_y = 0
         @scroll_x = 0
-        rt.primitives << { x: 0, y: @padding, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+        rt.primitives << @font_style.label(x: 0, y: @padding, text: @prompt, **@prompt_color)
       else
         # CURSOR AND SCROLL LOCATION
         @cursor_x = @font_style.string_width(@value[0, @selection_end].to_s)
@@ -204,7 +204,7 @@ module Input
         # TEXT
         f = find_index_at_x(@scroll_x)
         l = find_index_at_x(@scroll_x + @content_w) + 2
-        rt.primitives << { x: 0, y: @padding, text: @value[f, l - f], size_enum: @size_enum, font: @font }.label!(@text_color)
+        rt.primitives << @font_style.label(x: 0, y: @padding, text: @value[f, l - f], **@text_color)
       end
 
       draw_cursor(rt)

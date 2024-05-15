@@ -329,10 +329,10 @@ module Input
         @scroll_x = 0
         if @fill_from_bottom
           @cursor_y = 0
-          rt.primitives << { x: 0, y: 0, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+          rt.primitives << @font_style.label(x: 0, y: 0, text: @prompt, **@prompt_color)
         else
           @cursor_y = @h - @font_height
-          rt.primitives << { x: 0, y: @h - @font_height, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
+          rt.primitives << @font_style.label(x: 0, y: @h - @font_height, text: @prompt, **@prompt_color)
         end
       else
         # CURSOR AND SCROLL LOCATION
@@ -389,7 +389,7 @@ module Input
           end
 
           # TEXT FOR LINE
-          rt.primitives << { x: 0, y: y, text: line.clean_text, size_enum: @size_enum, font: @font }.label!(@text_color)
+          rt.primitives << @font_style.label(x: 0, y: y, text: line.clean_text, **@text_color)
         end
       end
 
