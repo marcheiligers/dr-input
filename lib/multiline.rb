@@ -6,7 +6,7 @@ module Input
       super
 
       word_wrap_chars = @word_chars.merge(@punctuation_chars)
-      @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @font, @size_enum, @w)
+      @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @w, font_style: @font_style)
       @fill_from_bottom = params[:fill_from_bottom] || false
     end
 

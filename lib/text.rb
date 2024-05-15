@@ -134,7 +134,7 @@ module Input
         return l if l > r
 
         m = ((l + r) / 2).floor
-        px = $gtk.calcstringbox(str[0, m].to_s, @size_enum, @font)[0]
+        px = @font_style.string_width(str[0, m].to_s)
         if px == x
           return m
         elsif px < x
@@ -155,7 +155,7 @@ module Input
         sc = @blurred_selection_color
       end
 
-      @scroll_w = $gtk.calcstringbox(@value.to_s, @size_enum, @font)[0].ceil
+      @scroll_w = @font_style.string_width(@value.to_s).ceil
       @content_w = @w.lesser(@scroll_w)
       @scroll_h = @content_h = @h
 
@@ -173,7 +173,7 @@ module Input
         rt.primitives << { x: 0, y: @padding, text: @prompt, size_enum: @size_enum, font: @font }.label!(@prompt_color)
       else
         # CURSOR AND SCROLL LOCATION
-        @cursor_x = $gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0]
+        @cursor_x = @font_style.string_width(@value[0, @selection_end].to_s)
         @cursor_y = 0
 
         if @content_w < @w
@@ -191,11 +191,11 @@ module Input
         # SELECTION
         if @selection_start != @selection_end
           if @selection_start < @selection_end
-            left = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
-            right = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
+            left = (@font_style.string_width(@value[0, @selection_start].to_s) - @scroll_x).cap_min_max(0, @w)
+            right = (@font_style.string_width(@value[0, @selection_end].to_s) - @scroll_x).cap_min_max(0, @w)
           elsif @selection_start > @selection_end
-            left = ($gtk.calcstringbox(@value[0, @selection_end].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
-            right = ($gtk.calcstringbox(@value[0, @selection_start].to_s, @size_enum, @font)[0] - @scroll_x).cap_min_max(0, @w)
+            left = (@font_style.string_width(@value[0, @selection_end].to_s) - @scroll_x).cap_min_max(0, @w)
+            right = (@font_style.string_width(@value[0, @selection_start].to_s) - @scroll_x).cap_min_max(0, @w)
           end
 
           rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
