@@ -1,3 +1,8 @@
+# v0.0.13 - 16 May 2024
+
+* Fixed a bug where the input would break if `size_enum` is specified as a number
+* Refactored string size calculations by encapsulating them into a `FontStyle` object
+
 # v0.0.12 - 12 May 2024
 
 * Fixes wrapping of words longer than the width of the multi-line input

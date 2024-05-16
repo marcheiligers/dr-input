@@ -3,7 +3,7 @@ module Input
     attr_reader :text, :clean_text, :start, :end, :length, :wrapped, :new_line
     attr_accessor :number
 
-    def initialize(number, start, text, wrapped, font, size_enum)
+    def initialize(number, start, text, wrapped, font_style)
       @number = number
       @start = start
       @text = text
@@ -12,8 +12,7 @@ module Input
       @end = start + @length
       @wrapped = wrapped
       @new_line = text[0] == "\n"
-      @font = font
-      @size_enum = size_enum
+      @font_style = font_style
     end
 
     def start=(val)
@@ -39,9 +38,9 @@ module Input
 
     def measure_to(index)
       if @text[0] == "\n"
-        index < 1 ? 0 : $gtk.calcstringbox(@text[1, index - 1].to_s, @size_enum, @font)[0]
+        index < 1 ? 0 : @font_style.string_width(@text[1, index - 1].to_s)
       else
-        $gtk.calcstringbox(@text[0, index].to_s, @size_enum, @font)[0]
+        @font_style.string_width(@text[0, index].to_s)
       end
     end
 
@@ -52,7 +51,7 @@ module Input
       width = 0
       while (index += 1) < length
         char = @text[index, 1]
-        char_w = char == "\n" ? 0 : $gtk.calcstringbox(char, @size_enum, @font)[0]
+        char_w = char == "\n" ? 0 : @font_style.string_width(char)
         # TODO: Test `index_at` with multiple different fonts
         char_mid = char_w / 4
         return index + @start if width + char_mid > x
@@ -66,14 +65,12 @@ module Input
   end
 
   class LineCollection
-    attr_reader :text_length, :lines
+    attr_reader :lines
 
     include Enumerable
 
-    def initialize(font, size_enum, lines = [])
+    def initialize(lines = [])
       @lines = lines
-      @font = font
-      @size_enum = size_enum
     end
 
     def each
@@ -131,7 +128,7 @@ module Input
         line = @lines[i += 1]
       end
 
-      LineCollection.new(@font, @size_enum, modified_lines)
+      LineCollection.new(modified_lines)
     end
 
     def text
@@ -148,11 +145,10 @@ module Input
   end
 
   class LineParser
-    def initialize(word_wrap_chars, crlf_chars, font, size_enum)
+    def initialize(word_wrap_chars, crlf_chars, font_style:)
       @word_wrap_chars = word_wrap_chars
       @crlf_chars = crlf_chars
-      @font = font
-      @size_enum = size_enum
+      @font_style = font_style
     end
 
     def find_word_breaks(text)
@@ -213,7 +209,7 @@ module Input
 
     def perform_word_wrap(text, width, first_line_number = 0, first_line_start = 0)
       words = find_word_breaks(text)
-      lines = LineCollection.new(@font, @size_enum)
+      lines = LineCollection.new
       line = ''
       i = -1
       le = words.length
@@ -221,36 +217,36 @@ module Input
         word = words[i]
         if word == "\n"
           unless line == ''
-            lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font, @size_enum)
+            lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font_style)
             first_line_start = lines.last.end
           end
           line = word
         else
-          w, = $gtk.calcstringbox((line + word).rstrip, @size_enum, @font)
+          w = @font_style.string_width((line + word).rstrip)
           if w > width
             unless line == ''
-              lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font, @size_enum)
+              lines << Line.new(lines.length + first_line_number, first_line_start, line, true, @font_style)
               first_line_start = lines.last.end
             end
 
             # break up long words
-            w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+            w = @font_style.string_width(word.rstrip)
             # TODO: make this a binary search
             while w > width
               r = word.length - 1
               l = 0
               m = r.idiv(2)
-              w, = $gtk.calcstringbox(word[0, m].rstrip, @size_enum, @font)
+              w = @font_style.string_width(word[0, m].rstrip)
               loop do
                 if w == width
                   # Whoa, add this
-                  lines << Line.new(lines.length + first_line_number, first_line_start, word[0, m], true, @font, @size_enum)
+                  lines << Line.new(lines.length + first_line_number, first_line_start, word[0, m], true, @font_style)
                   first_line_start = lines.last.end
                   word = word[m, word.length]
                   break
                 elsif w < width
                   if r - l <= 1
-                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, r], true, @font, @size_enum)
+                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, r], true, @font_style)
                     first_line_start = lines.last.end
                     word = word[r, word.length]
                     break
@@ -261,7 +257,7 @@ module Input
                   m = (l + r).idiv(2)
                 elsif w > width
                   if r - l <= 1
-                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, l], true, @font, @size_enum)
+                    lines << Line.new(lines.length + first_line_number, first_line_start, word[0, l], true, @font_style)
                     first_line_start = lines.last.end
                     word = word[l, word.length]
                     break
@@ -271,14 +267,14 @@ module Input
                   r = m - 1
                   m = (l + r).idiv(2)
                 end
-                w, = $gtk.calcstringbox(word[0, m].rstrip, @size_enum, @font)
+                w = @font_style.string_width(word[0, m].rstrip)
               end
-              w, = $gtk.calcstringbox(word.rstrip, @size_enum, @font)
+              w = @font_style.string_width(word.rstrip)
             end
             line = word
           elsif word.start_with?("\n")
             unless line == ''
-              lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font, @size_enum)
+              lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font_style)
               first_line_start = lines.last.end
             end
             line = word
@@ -288,7 +284,7 @@ module Input
         end
       end
 
-      lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font, @size_enum)
+      lines << Line.new(lines.length + first_line_number, first_line_start, line, false, @font_style)
     end
   end
 end

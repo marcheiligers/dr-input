@@ -43,9 +43,9 @@ module Input
   class MultilineValue
     attr_reader :lines
 
-    def initialize(text, word_wrap_chars, crlf_chars, font, size_enum, w)
+    def initialize(text, word_wrap_chars, crlf_chars, w, font_style:)
       @w = w
-      @line_parser = LineParser.new(word_wrap_chars, crlf_chars, font, size_enum)
+      @line_parser = LineParser.new(word_wrap_chars, crlf_chars, font_style: font_style)
       @lines = @line_parser.perform_word_wrap(text, @w)
     end
 
