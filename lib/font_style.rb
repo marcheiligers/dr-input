@@ -1,9 +1,9 @@
 class FontStyle
   attr_reader :font_height
 
-  def initialize(font:, size_enum:, word_chars:)
+  def initialize(font:,  word_chars:, size_enum: nil, size_px: nil)
     @font = font
-    @label_params = { size_enum: size_enum }
+    @label_params = size_px ? { size_px: size_px } : { size_enum: size_enum }
     _, @font_height = $gtk.calcstringbox(word_chars.join(''), font: @font, **@label_params)
   end
 

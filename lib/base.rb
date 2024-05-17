@@ -34,9 +34,14 @@ module Input
 
       font = params[:font].to_s
       size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, params[:size_enum])
+      size_px = params[:size_px]
 
       word_chars = (params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-'])
-      @font_style = FontStyle.new(font: font, size_enum: size_enum, word_chars: word_chars)
+      @font_style = if size_px
+                      FontStyle.new(font: font, size_px: size_px, word_chars: word_chars)
+                    else
+                      FontStyle.new(font: font, size_enum: size_enum, word_chars: word_chars)
+                    end
       @font_height = @font_style.font_height
       @word_chars = Hash[word_chars.map { [_1, true] }]
       @punctuation_chars = Hash[(params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]).map { [_1, true] }]
