@@ -5,15 +5,6 @@ module Input
                 :content_w, :content_h, :scroll_w, :scroll_h
     attr_accessor :readonly, :scroll_x, :scroll_y
 
-    SIZE_ENUM = {
-      small: -1,
-      normal: 0,
-      large: 1,
-      xlarge: 2,
-      xxlarge: 3,
-      xxxlarge: 4
-    }.freeze
-
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
 
@@ -32,12 +23,8 @@ module Input
       @x = params[:x] || 0
       @y = params[:y] || 0
 
-      font = params[:font].to_s
-      size_enum = SIZE_ENUM.fetch(params[:size_enum] || :normal, params[:size_enum])
-      size_px = params[:size_px]
-
       word_chars = (params[:word_chars] || ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-'])
-      @font_style = FontStyle.from(font: font, size_px: size_px, size_enum: size_enum, word_chars: word_chars)
+      @font_style = FontStyle.from(word_chars: word_chars, **params.slice(:font, :size_enum, :size_px))
       @font_height = @font_style.font_height
       @word_chars = Hash[word_chars.map { [_1, true] }]
       @punctuation_chars = Hash[(params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]).map { [_1, true] }]
