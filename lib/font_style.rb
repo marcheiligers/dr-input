@@ -1,8 +1,8 @@
 module FontStyle
-  def self.from(**params)
-    return UsingSizePx.new(**params) if params[:size_px]
+  def self.from(font:, word_chars:, size_px: nil, size_enum: nil)
+    return UsingSizePx.new(font: font, word_chars: word_chars, size_px: size_px) if size_px
 
-    UsingSizeEnum.new(**params)
+    UsingSizeEnum.new(font: font, word_chars: word_chars, size_enum: size_enum)
   end
 
   class UsingSizeEnum
