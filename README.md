@@ -57,6 +57,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `padding` - padding, default 2
 * `font` - font path (eg. `'fonts/myfont.ttf'`), default ''
 * `size_enum` - size enumeration (integer), or named size such as `:small`, `:normal`, `:large`, default: `:normal` (`0`)
+* `size_px` - font size in pixels, takes precedence over `size_enum` if given
 * `text_color` - text color, default `{ r: 0, g: 0, b: 0, a: 255 }`
 * `r` - text color, red component, default 0, used if `text_color` is `nil`
 * `g` - text color, green component, default 0, used if `text_color` is `nil`
