@@ -182,6 +182,32 @@ def test_text_drag_inside_sets_selection(args, assert)
   assert.equal! input.selection_end, 10
 end
 
+# Two representative test cases using size_px instead of size_enum
+
+def test_default_height_is_calculated_from_padding_and_font_height_size_px(_args, assert)
+  _, font_height = $gtk.calcstringbox('A', size_px: 30)
+  text_input = Input::Text.new(padding: 10, size_px: 30)
+
+  assert.equal! text_input.h, font_height + 20
+end
+
+def test_text_drag_inside_sets_selection_size_px(args, assert)
+  $args = args
+  three_letters_wide, _ = $gtk.calcstringbox('ABC', size_px: 44)
+  six_letters_wide, _ = $gtk.calcstringbox('ABCDEF', size_px: 44)
+  input = Input::Text.new(x: 100, y: 100, w: 200, size_px: 44, value: 'ABCDEFGH', focussed: true)
+
+  mouse_is_inside(input, x: 100 + three_letters_wide)
+  mouse_down
+  input.tick
+  mouse_is_inside(input, x: 100 + six_letters_wide)
+  mouse_up
+  input.tick
+
+  assert.equal! input.selection_start, 3
+  assert.equal! input.selection_end, 6
+end
+
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
   width, _ = $gtk.calcstringbox('1' * width_in_letters, 0)
