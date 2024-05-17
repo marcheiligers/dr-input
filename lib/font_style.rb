@@ -1,4 +1,8 @@
 class FontStyle
+  def self.from(**params)
+    new(**params)
+  end
+
   attr_reader :font_height
 
   def initialize(font:,  word_chars:, size_enum: nil, size_px: nil)
