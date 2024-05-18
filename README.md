@@ -57,6 +57,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `padding` - padding, default 2
 * `font` - font path (eg. `'fonts/myfont.ttf'`), default ''
 * `size_enum` - size enumeration (integer), or named size such as `:small`, `:normal`, `:large`, default: `:normal` (`0`)
+* `size_px` - font size in pixels, takes precedence over `size_enum` if given
 * `text_color` - text color, default `{ r: 0, g: 0, b: 0, a: 255 }`
 * `r` - text color, red component, default 0, used if `text_color` is `nil`
 * `g` - text color, green component, default 0, used if `text_color` is `nil`
@@ -152,3 +153,4 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * @DarkGriffin (on Discord) for requesting this control in the first place, and not being shy about the _crazy_ desired feature list (of which, I feel like, I've only touched the surface).
 * @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
 * @cookie (on Discord) for reigniting my interest in building this control by asking about how to use it, finding a new, novel use for it, and pushing me to improve the sample(s).
+* @kfischer_okarin (on Discord, aka @kfischer-okarin) for contributing `size_px`, and fixing (or forcing me to fix) the tests. This input is used in his product [Palantir](https://kfischer-okarin.itch.io/palantir) which you should check out.
