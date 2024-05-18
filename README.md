@@ -153,3 +153,4 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * @DarkGriffin (on Discord) for requesting this control in the first place, and not being shy about the _crazy_ desired feature list (of which, I feel like, I've only touched the surface).
 * @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
 * @cookie (on Discord) for reigniting my interest in building this control by asking about how to use it, finding a new, novel use for it, and pushing me to improve the sample(s).
+* @kfischer_okarin (on Discord, aka @kfischer-okarin) for contributing `size_px`, and fixing (or forcing me to fix) the tests. This input is used in his product [Palantir](https://kfischer-okarin.itch.io/palantir) which you should check out.

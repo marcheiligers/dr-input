@@ -1,3 +1,7 @@
+# v0.0.14 - 17 May 2024
+
+* Added support for `size_px` to specify font-sizes
+
 # v0.0.13 - 16 May 2024
 
 * Fixed a bug where the input would break if `size_enum` is specified as a number
