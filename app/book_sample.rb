@@ -2,9 +2,9 @@ require 'lib/input.rb'
 require 'app/scroller.rb'
 require 'tests/alice_in_wonderland.rb'
 
-# FONT = ''
+FONT = ''
 # FONT = 'fonts/Victorian Parlor_By Burntilldead_Free/Victorian Parlor Vintage Alternate_free.ttf'
-FONT = 'fonts/day-roman/DAYROM__.ttf'.freeze
+# FONT = 'fonts/day-roman/DAYROM__.ttf'.freeze
 DEBUG_LABEL = { x: 20, r: 80, size_enum: -2, primitive_marker: :label }.freeze
 
 def tick(args)
@@ -41,7 +41,7 @@ def tick(args)
       w: 1200,
       h: 420,
       prompt: 'Content',
-      value: ALICE_IN_WONDERLAND,
+      value: ALICE_IN_WONDERLAND.gsub("\n\n", "__DOUBLEN__").delete("\n").gsub("__DOUBLEN__", "\n\n"),
       font: FONT,
       size_enum: :xxlarge,
       selection_start: 0,
@@ -82,7 +82,7 @@ def tick(args)
   args.outputs.primitives << { y: 658, text: "#{args.state.text.value.length}/40", **DEBUG_LABEL, x: 1220 }
   args.outputs.primitives << { y: 140, text: "Simple Value: #{nval}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 110, text: "Wrapping Value (#{wval.length}): #{wval.gsub("\n", '\n')}" }.label!(DEBUG_LABEL)
-  # args.outputs.primitives << { y: 90, text: "Current word: #{args.state.multiline.current_word}", **DEBUG_LABEL }
+  args.outputs.primitives << { y: 90, text: "Current word: #{args.state.multiline.current_word}", **DEBUG_LABEL }
   args.outputs.primitives << { y: 70, text: "Current line: #{args.state.multiline.current_line.inspect}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 40, text: "Clipboard: #{$clipboard}" }.label!(DEBUG_LABEL)
   args.outputs.primitives << { y: 20, text: "Content rect: #{args.state.multiline.content_rect}, Scroll rect: #{args.state.multiline.scroll_rect}" }.label!(DEBUG_LABEL)

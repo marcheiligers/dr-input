@@ -241,8 +241,11 @@ module Input
     end
 
     def current_word
-      left = @word_chars.include?(@value[@selection_end - 1, 1]) ? find_word_break_left : @selection_end
-      right = @word_chars.include?(@value[@selection_end, 1]) ? find_word_break_right : @selection_end
+      return nil if @selection_end == 0
+      return nil unless @word_chars[@value[@selection_end - 1]]
+
+      left = find_word_break_left
+      right = @word_chars[@value[@selection_end]] ? find_word_break_right : @selection_end
       @value[left, right - left]
     end
 
@@ -272,34 +275,36 @@ module Input
       return 0 if @selection_end == 0
 
       index = @selection_end
+      value = @value.to_s
 
       loop do
         index -= 1
         return 0 if index == 0
-        break if @word_chars.include?(@value[index, 1])
+        break if @word_chars[value[index]]
       end
 
       loop do
         index -= 1
         return 0 if index == 0
-        return index + 1 unless @word_chars.include?(@value[index, 1])
+        return index + 1 unless @word_chars[value[index]]
       end
     end
 
     def find_word_break_right(index = @selection_end) # rubocop:disable Metrics/MethodLength
-      length = @value.length
-      return length if index == length
+      value = @value.to_s
+      length = value.length
+      return length if index >= length
 
       loop do
-        index += 1
         return length if index == length
-        break if @word_chars.include?(@value[index, 1])
+        break if @word_chars[value[index]]
+        index += 1
       end
 
       loop do
         index += 1
         return length if index == length
-        return index unless @word_chars.include?(@value[index, 1])
+        return index unless @word_chars[value[index]]
       end
     end
 
@@ -341,6 +346,7 @@ module Input
     end
 
     def move_word_left
+      index = find_word_break_left
       @selection_start = @selection_end = find_word_break_left
     end
 

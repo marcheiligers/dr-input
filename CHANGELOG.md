@@ -1,3 +1,8 @@
+# v0.0.15 - 19 May 2024
+
+* Fixed a bug in `current_word` where 'wor|d pair' would result in 'word pair' being returned
+* Fixed performance for `current_word` in very long words in large documents
+
 # v0.0.14 - 17 May 2024
 
 * Added support for `size_px` to specify font-sizes
