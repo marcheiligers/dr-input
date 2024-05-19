@@ -15,10 +15,11 @@ module Input
     end
 
     def clear
-      value = ''
+      self.value = ''
     end
 
-    def autocomplete
+    def paste
+      insert($gtk.ffi_misc.getclipboard)
     end
 
     def tick
@@ -29,6 +30,64 @@ module Input
       $args.inputs.keyboard.key_down.clear
       $args.inputs.keyboard.key_up.clear
       $args.inputs.keyboard.key_held.clear
+    end
+
+    # the following methods are modified copies from console_prompt.rb
+    # https://github.com/marcheiligers/dragonruby-game-toolkit-contrib/blob/master/dragon/console_prompt.rb
+    def autocomplete
+      if !@last_autocomplete_prefix
+        @last_autocomplete_prefix = calc_autocomplete_prefix
+        @next_candidate_index = 0
+      else
+        candidates = method_candidates(@last_autocomplete_prefix)
+        return if candidates.empty?
+
+        candidate = candidates[@next_candidate_index]
+        candidate = candidate[0..-2] + " = " if candidate.end_with? '='
+        @next_candidate_index += 1
+        @next_candidate_index = 0 if @next_candidate_index >= candidates.length
+        self.value = display_autocomplete_candidate(candidate)
+      end
+    rescue Exception => e
+      puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
+      puts e.backtrace
+    end
+
+    def last_period_index
+      value.rindex('.')
+    end
+
+    def calc_autocomplete_prefix
+      if last_period_index
+        value[last_period_index + 1, -1] || ''
+      else
+        value
+      end
+    end
+
+    def current_object
+      return GTK::ConsoleEvaluator unless last_period_index
+
+      GTK::ConsoleEvaluator.eval(value[0, last_period_index])
+    rescue NameError
+      nil
+    end
+
+    def method_candidates(prefix)
+      current_object.autocomplete_methods.map(&:to_s).select { |m| m.start_with? prefix }
+    end
+
+    def display_autocomplete_candidate(candidate)
+      if last_period_index
+        value[0, last_period_index + 1] + candidate.to_s
+      else
+        candidate.to_s
+      end
+    end
+
+    def reset_autocomplete
+      @last_autocomplete_prefix = nil
+      @next_candidate_index = 0
     end
   end
 
@@ -45,11 +104,6 @@ module Input
       mouse_wheel_scroll args
 
       @log_offset = 0 if @log_offset < 0
-
-      # elsif args.inputs.keyboard.key_down.v
-      #   if args.inputs.keyboard.key_down.control || args.inputs.keyboard.key_down.meta
-      #     prompt << $gtk.ffi_misc.getclipboard
-      #   end
     end
 
     def on_unhandled_key(key, input)
@@ -118,6 +172,7 @@ module Input
 
     def current_input_str=(str)
       prompt.value = str
+      prompt.move_to_end
     end
   end
 end
