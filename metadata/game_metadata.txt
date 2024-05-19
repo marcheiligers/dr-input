@@ -3,7 +3,7 @@ devid=fascinationworks
 devtitle=Fascination Works
 gameid=dr-input
 gametitle=Dragon Ruby Input
-version=0.0.3
+version=0.0.15
 icon=metadata/icon.png
 
 # === Flags available at all licensing tiers ===

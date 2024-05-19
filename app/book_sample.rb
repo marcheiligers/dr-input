@@ -9,6 +9,8 @@ DEBUG_LABEL = { x: 20, r: 80, size_enum: -2, primitive_marker: :label }.freeze
 
 def tick(args)
   if args.tick_count == 0
+    Input.replace_console!
+
     args.state.text ||= Input::Text.new(
       x: 20,
       y: 660,
