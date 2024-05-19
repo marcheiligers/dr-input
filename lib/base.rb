@@ -270,7 +270,6 @@ module Input
       @selection_end = index + text.length
     end
 
-    # TODO: Improve walking words
     def find_word_break_left # rubocop:disable Metrics/MethodLength
       return 0 if @selection_end == 0
 

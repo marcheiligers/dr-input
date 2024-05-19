@@ -1,4 +1,4 @@
-# v0.0.15 - 19 May 2024
+# v0.0.15 - 18 May 2024
 
 * Fixed a bug in `current_word` where 'wor|d pair' would result in 'word pair' being returned
 * Fixed performance for `current_word` in very long words in large documents
@@ -137,38 +137,32 @@
 
 # Known Issues and TODO
 
-// Saturday 02/03/24 at 02:21PM - 40 files in 0.11 secs
+// Saturday 05/18/24 at 05:30PM - 42 files in 0.14 secs
 
-## BUG (2)
-1. lib/base.rb:23               Modifier keys are broken on the web ()
-2. lib/multiline.rb:201         If the first line has only one char, down moves right from the first column
+## BUG (1)
+1. lib/base.rb:13               Modifier keys are broken on the web ()
 
-## TODO (28)
-1. lib/base.rb:148              cursor size
-2. lib/base.rb:149              cursor color
-3. lib/base.rb:257              Improve walking words
-4. lib/line_collection.rb:56    Test `index_at` with multiple different fonts
-5. lib/line_collection.rb:173   prolly need to replace \r\n with \n up front
-6. lib/line_collection.rb:177   consider how to render TAB, maybe convert TAB into 4 spaces?
-7. lib/line_collection.rb:183   consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
-8. lib/line_collection.rb:201   consider how to render TAB, maybe convert TAB into 4 spaces?
-9. lib/text.rb:34               undo/redo
-10. lib/text.rb:61              Treat delete and backspace differently
-11. lib/text.rb:88              Word selection (double click), All selection (triple click)
-12. lib/text.rb:142             handle padding correctly
-13. lib/text.rb:159             implement sprite background
-14. lib/input.rb:10             Switch clipboard to system clipboard when setclipboard is available
-15. lib/input.rb:11             Drag selected text
-16. lib/input.rb:12             Home key and End key
-17. lib/input.rb:13             Render Squiggly lines
-18. lib/input.rb:14             “ghosting text” feature
-19. lib/input.rb:15             Find/Replace (all)
-20. lib/input.rb:16             Replace unavailable chars with [?]
-21. lib/multiline.rb:46         undo/redo
-22. lib/multiline.rb:91         Retain a original_cursor_x when moving up/down to try stay generally in the same x range
-23. lib/multiline.rb:97         beginning of previous paragraph with alt
-24. lib/multiline.rb:106        end of next paragraph with alt
-25. lib/multiline.rb:238        Word selection (double click), All selection (triple click)
-26. lib/multiline.rb:294        Implement line spacing
-27. lib/multiline.rb:304        implement sprite background
-28. lib/multiline.rb:336        Ensure cursor_x doesn't go past the line width
+## TODO (23)
+1. lib/line_collection.rb:55    Test `index_at` with multiple different fonts
+2. lib/line_collection.rb:169   prolly need to replace \r\n with \n up front
+3. lib/line_collection.rb:173   consider how to render TAB, maybe convert TAB into 4 spaces?
+4. lib/line_collection.rb:179   consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
+5. lib/line_collection.rb:197   consider how to render TAB, maybe convert TAB into 4 spaces?
+6. lib/line_collection.rb:234   make this a binary search
+7. lib/text.rb:34               undo/redo
+8. lib/text.rb:95               Word selection (double click), All selection (triple click)
+9. lib/text.rb:149              handle padding correctly
+10. lib/text.rb:166             implement sprite background
+11. lib/input.rb:11             Switch clipboard to system clipboard when setclipboard is available
+12. lib/input.rb:12             Drag selected text
+13. lib/input.rb:13             Render Squiggly lines
+14. lib/input.rb:14             “ghosting text” feature
+15. lib/input.rb:15             Find/Replace (all)
+16. lib/input.rb:16             Replace unavailable chars with [?]
+17. lib/multiline.rb:47         undo/redo
+18. lib/multiline.rb:101        Retain a original_cursor_x when moving up/down to try stay generally in the same x range
+19. lib/multiline.rb:107        beginning of previous paragraph with alt
+20. lib/multiline.rb:116        end of next paragraph with alt
+21. lib/multiline.rb:253        Word selection (double click), All selection (triple click)
+22. lib/multiline.rb:313        Implement line spacing
+23. lib/multiline.rb:323        implement sprite background
