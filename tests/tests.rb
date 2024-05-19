@@ -28,6 +28,36 @@ def test_calcstringbox_tab_has_no_witdh(_args, assert)
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
+# ---------------------- Word break tests ---------------------
+
+def test_find_word_break_left(_args, assert)
+  assert_finds_word_break_left(assert, '|word test', '|word test')
+  assert_finds_word_break_left(assert, 'wo|rd test', '|word test')
+  assert_finds_word_break_left(assert, 'word| test', '|word test')
+  assert_finds_word_break_left(assert, 'word |test', '|word test')
+  assert_finds_word_break_left(assert, 'word t|est', 'word |test')
+  assert_finds_word_break_left(assert, 'word test|', 'word |test')
+end
+
+def test_find_word_break_right(_args, assert)
+  assert_finds_word_break_right(assert, '|word test', 'word| test')
+  assert_finds_word_break_right(assert, 'wo|rd test', 'word| test')
+  assert_finds_word_break_right(assert, 'wor|d test', 'word| test')
+  assert_finds_word_break_right(assert, 'word| test', 'word test|')
+  assert_finds_word_break_right(assert, 'word |test', 'word test|')
+  assert_finds_word_break_right(assert, 'word t|est', 'word test|')
+  assert_finds_word_break_right(assert, 'word test|', 'word test|')
+end
+
+# ---------------------- Current word tests -------------------
+
+def test_finds_current_word(_args, assert)
+  assert_current_word(assert, '|word test', nil)
+  assert_current_word(assert, 'w|ord test', 'word')
+  assert_current_word(assert, 'wor|d test', 'word')
+  assert_current_word(assert, 'word| test', 'word')
+  assert_current_word(assert, 'word |test', nil)
+end
 
 # ---------------------- Line wrap tests ----------------------
 
@@ -216,6 +246,49 @@ end
 
 
 # ---------------------- helper methods ----------------------
+
+def build_text_input(value, selection_start = 0, selection_end = selection_start)
+  input = Input::Text.new(value: value, selection_start: selection_start, selection_end: selection_end)
+end
+
+def make_word_break_error(input, actual, expected)
+  <<-EOS
+    Starting '#{input.value.to_s.dup.insert(input.selection_end, '|')}'
+    Actual   '#{input.value.to_s.dup.insert(actual, '|')}'
+    Expected '#{input.value.to_s.dup.insert(expected, '|')}'
+  EOS
+end
+
+def assert_finds_word_break_left(assert, starting, expected)
+  selection_end = starting.index('|')
+  expected = expected.index('|')
+  input = build_text_input(starting.delete('|'), selection_end)
+  actual = input.find_word_break_left
+  assert.equal! actual, expected, make_word_break_error(input, actual, expected)
+end
+
+def assert_finds_word_break_right(assert, starting, expected)
+  selection_end = starting.index('|')
+  expected = expected.index('|')
+  input = build_text_input(starting.delete('|'), selection_end)
+  actual = input.find_word_break_right
+  assert.equal! actual, expected, make_word_break_error(input, actual, expected)
+end
+
+def make_current_word_error(input, actual, expected)
+  <<-EOS
+    Starting '#{input.value.to_s.dup.insert(input.selection_end, '|')}'
+    Actual   #{actual.nil? ? 'nil' : "'#{actual}'"}
+    Expected #{expected.nil? ? 'nil' : "'#{expected}'"}
+  EOS
+end
+
+def assert_current_word(assert, starting, expected)
+  selection_end = starting.index('|')
+  input = build_text_input(starting.delete('|'), selection_end)
+  actual = input.current_word
+  assert.equal! actual, expected, make_current_word_error(input, actual, expected)
+end
 
 def build_multiline_input(width_in_letters)
   # This works because the default DR font is monospaced
