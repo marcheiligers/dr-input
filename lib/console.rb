@@ -37,6 +37,7 @@ module Input
     def autocomplete
       if !@last_autocomplete_prefix
         @last_autocomplete_prefix = calc_autocomplete_prefix
+        puts "@last_autocomplete_prefix #{@last_autocomplete_prefix}"
         @next_candidate_index = 0
       else
         candidates = method_candidates(@last_autocomplete_prefix)
@@ -60,7 +61,7 @@ module Input
 
     def calc_autocomplete_prefix
       if last_period_index
-        value[last_period_index + 1, -1] || ''
+        value[last_period_index + 1, value.length] || ''
       else
         value
       end
