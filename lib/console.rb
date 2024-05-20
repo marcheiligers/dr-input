@@ -47,6 +47,7 @@ module Input
         @next_candidate_index += 1
         @next_candidate_index = 0 if @next_candidate_index >= candidates.length
         self.value = display_autocomplete_candidate(candidate)
+        self.selection_end = self.value.length
       end
     rescue Exception => e
       puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
