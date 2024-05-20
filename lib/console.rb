@@ -37,7 +37,6 @@ module Input
     def autocomplete
       if !@last_autocomplete_prefix
         @last_autocomplete_prefix = calc_autocomplete_prefix
-        puts "@last_autocomplete_prefix #{@last_autocomplete_prefix}"
         @next_candidate_index = 0
       else
         candidates = method_candidates(@last_autocomplete_prefix)
