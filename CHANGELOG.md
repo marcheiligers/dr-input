@@ -1,3 +1,8 @@
+# v0.0.16 - 19 May 2024
+
+* Added experimental support for replacing the DragonRuby console prompt
+  * Use `Input.replace_console!` to enable (See `book_sample.rb`)
+
 # v0.0.15 - 18 May 2024
 
 * Fixed a bug in `current_word` where 'wor|d pair' would result in 'word pair' being returned
