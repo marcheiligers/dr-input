@@ -42,8 +42,10 @@ Color arguments can be passed as `Hash`es or `Array`s suffixed with `_color`, or
 For example, for the `prompt` you can pass:
 * A `prompt_color` as a `Hash`, like `{ r: 100, g: 100, b: 100, a: 255 }`
 * A `prompt_color` as an `Array`, like `[100, 100, 100, 255]`
-* A `prompt_color` as an `Integer`, like `0xFF33BB`
+* A `prompt_color` as an `Integer`, like `0xFF33BB` or `0xFF33BBFF`
 * Individual `prompt_r`, `prompt_g`, `prompt_b` and `prompt_a` `Integer` values
+
+**NOTE**: For Integer (hex) rgba to work, there has to be a red component > 0. If you need red to be zero, use the `Hash` or `Array` format
 
 The argument list below will list `prompt_color` but not the individual `prompt_*` values.
 

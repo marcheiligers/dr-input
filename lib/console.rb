@@ -54,6 +54,31 @@ module Input
       puts e.backtrace
     end
 
+    def autocomplete2
+      if !@autocompleting
+
+      else # check if anythign else has changes
+      end
+
+      if !@last_autocomplete_prefix
+        @last_autocomplete_prefix = calc_autocomplete_prefix
+        @next_candidate_index = 0
+      else
+        candidates = method_candidates(@last_autocomplete_prefix)
+        return if candidates.empty?
+
+        candidate = candidates[@next_candidate_index]
+        candidate = candidate[0..-2] + " = " if candidate.end_with? '='
+        @next_candidate_index += 1
+        @next_candidate_index = 0 if @next_candidate_index >= candidates.length
+        self.value = display_autocomplete_candidate(candidate)
+        self.selection_end = self.value.length
+      end
+    rescue Exception => e
+      puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
+      puts e.backtrace
+    end
+
     def last_period_index
       value.rindex('.')
     end
