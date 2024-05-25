@@ -1,3 +1,7 @@
+# v0.0.17 - 24 May 2024
+
+* Moved `FontStyle` module inside `Input` module to avoid global namespace pollution
+
 # v0.0.16 - 19 May 2024
 
 * Added experimental support for replacing the DragonRuby console prompt
