@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        dr_version:
+          - 'latest'
+        runner:
+          - windows-latest
+          - macos-latest
+          - ubuntu-latest
+      fail-fast: false
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ./dr-input
+      - uses: kfischer-okarin/download-dragonruby@v1
+        with:
+          version: ${{ matrix.dr_version }}
+      - name: Run tests
+        working-directory: ./dr-input
+        run: |
+          ./test | tee tests.log
+          grep '\[Game\] 0 test(s) failed.' tests.log
