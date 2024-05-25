@@ -1,4 +1,12 @@
 module Input
+  NOOP = ->(*_args) {}
+
+  META_KEYS = %i[meta_left meta_right meta].freeze
+  SHIFT_KEYS = %i[shift_left shift_right shift].freeze
+  ALT_KEYS = %i[alt_left alt_right alt].freeze
+  CTRL_KEYS = %i[control_left control_right control].freeze
+  IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
+
   class Base
     include Util
 
@@ -9,15 +17,6 @@ module Input
 
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
-
-    NOOP = ->(*_args) {}
-
-    # BUG: Modifier keys are broken on the web ()
-    META_KEYS = %i[meta_left meta_right meta].freeze
-    SHIFT_KEYS = %i[shift_left shift_right shift].freeze
-    ALT_KEYS = %i[alt_left alt_right alt].freeze
-    CTRL_KEYS = %i[control_left control_right control].freeze
-    IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
 
     @@id = 0
 
@@ -37,12 +36,7 @@ module Input
       @w = params[:w] || 256
       @h = params[:h] || @font_height + @padding * 2
 
-      @text_color = (parse_color_nilable(params, :text) || {
-        r: params[:r] || 0,
-        g: params[:g] || 0,
-        b: params[:b] || 0,
-        a: params[:a] || 255,
-      }).merge(vertical_alignment_enum: 0)
+      @text_color = parse_color(params, :text).merge(vertical_alignment_enum: 0)
       @background_color = parse_color_nilable(params, :background)
       @blurred_background_color = parse_color_nilable(params, :blurred) || @background_color
 

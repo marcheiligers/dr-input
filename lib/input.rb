@@ -6,6 +6,7 @@ require_relative 'font_style.rb'
 require_relative 'base.rb'
 require_relative 'text.rb'
 require_relative 'multiline.rb'
+require_relative 'menu.rb'
 require_relative 'console.rb'
 
 $clipboard = ''

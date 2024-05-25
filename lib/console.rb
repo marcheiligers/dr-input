@@ -42,6 +42,16 @@ module Input
         candidates = method_candidates(@last_autocomplete_prefix)
         return if candidates.empty?
 
+        @autocomplete_menu = Menu.new(
+          x: 100,
+          y: 600,
+          focussed: true,
+          text_color: 0xDDDDDD,
+          background_color: 0x333333CC,
+          items: candidates
+        )
+
+
         candidate = candidates[@next_candidate_index]
         candidate = candidate[0..-2] + " = " if candidate.end_with? '='
         @next_candidate_index += 1
