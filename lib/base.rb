@@ -101,15 +101,10 @@ module Input
         when Hash
           { r: cp.r || dr, g: cp.g || dg, b: cp.b || db, a: cp.a || da }
         when Integer
-          puts "cp = #{cp}"
           if cp > 0xFFFFFF
-            c = { r: (cp & 0xFF000000) >> 24, g: (cp & 0xFF0000) >> 16, b: (cp & 0xFF00) >> 8, a: cp & 0xFF }
-            puts "big #{c}"
-            c
+            { r: (cp & 0xFF000000) >> 24, g: (cp & 0xFF0000) >> 16, b: (cp & 0xFF00) >> 8, a: cp & 0xFF }
           else
-            c = { r: (cp & 0xFF0000) >> 16, g: (cp & 0xFF00) >> 8, b: cp & 0xFF, a: da }
-            puts "little #{c}"
-            c
+            { r: (cp & 0xFF0000) >> 16, g: (cp & 0xFF00) >> 8, b: cp & 0xFF, a: da }
           end
         else
           raise ArgumentError, "Color #{name} should be an Array or Hash"
