@@ -5,13 +5,35 @@ module Input
 
       super
 
-      word_wrap_chars = @word_chars.merge(@punctuation_chars)
-      @value = MultilineValue.new(value, word_wrap_chars, @crlf_chars, @w, font_style: @font_style)
+      @word_wrap_chars = @word_chars.merge(@punctuation_chars)
+      @value = MultilineValue.new(value, @word_wrap_chars, @crlf_chars, @w, font_style: @font_style)
       @fill_from_bottom = params[:fill_from_bottom] || false
     end
 
     def lines
       @value.lines
+    end
+
+    def w=(val)
+      @w = val
+      reflow!
+    end
+
+    def size_enum=(val)
+      @font_style = FontStyle.from(word_chars: @word_chars.keys, font: @font_style.font, size_enum: val)
+      reflow!
+      @font_height = @font_style.font_height
+    end
+
+    def size_px=(val)
+      @font_style = FontStyle.from(word_chars: @word_chars.keys, font: @font_style.font, size_px: val)
+      reflow!
+      @font_height = @font_style.font_height
+    end
+
+    def reflow!
+      @ensure_line_visible = @value.lines.length - ((@scroll_y + @h) / @font_height).floor
+      @value = MultilineValue.new(@value.to_s, @word_wrap_chars, @crlf_chars, @w, font_style: @font_style)
     end
 
     def draw_override(ffi)
@@ -348,6 +370,10 @@ module Input
         @cursor_y += @fill_from_bottom ? @content_h : @h - @content_h if @content_h < @h
         if @scroll_h <= @h # total height is less than height of the control
           @scroll_y = @fill_from_bottom ? @scroll_h : 0
+        elsif @ensure_line_visible
+          # TODO: Line visibility
+          @scroll_y = (@value.lines.length - @ensure_line_visible) * @font_height - @h + @padding
+          @ensure_line_visible = nil
         elsif @ensure_cursor_visible
           if @cursor_y + @font_height > @scroll_y + @content_h
             @scroll_y = @cursor_y + @font_height - @content_h

@@ -3,8 +3,7 @@ module Input
     include Util
 
     attr_sprite
-    attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
-                :content_w, :content_h, :scroll_w, :scroll_h
+    attr_reader :selected_index, :content_w, :content_h, :scroll_w, :scroll_h
     attr_accessor :readonly, :scroll_x, :scroll_y
 
     @@id = 0
@@ -18,22 +17,10 @@ module Input
 
       @padding = params[:padding] || 2
 
-      items = params[:items]
-      @items = case items
-               when Hash
-                 items
-               when Array
-                 items.map { |item| { text: item, value: item } }
-               else
-                 puts "Items should be an array of Strings or a Hash with text and value keys"
-                 []
-               end
+      self.items = params[:items]
 
-      @w = params[:w] || @items.reduce(0) do |max, item|
-        iw = @font_style.string_width(item.text) + @padding * 2
-        iw > max ? iw : max
-      end
-      @h = params[:h] || @font_height * @items.length + @padding * 2
+      @w = params[:w] || size_width_to_fit
+      @h = params[:h] || size_height_to_fit
 
       @text_color = parse_color(params, :text).merge(vertical_alignment_enum: 0)
       @background_color = parse_color_nilable(params, :background)
@@ -69,11 +56,11 @@ module Input
 
       @on_selected = params[:on_selected] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
-
-      @value_changed = true
     end
 
     def draw_override(ffi)
+      return if @items.length == 0
+
       # The argument order for ffi_draw.draw_sprite_3 is:
       # x, y, w, h,
       # path,
@@ -123,38 +110,38 @@ module Input
     def handle_mouse # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       return
 
-      mouse = $args.inputs.mouse
-      inside = mouse.inside_rect?(self)
+      # mouse = $args.inputs.mouse
+      # inside = mouse.inside_rect?(self)
 
-      @scroll_y += mouse.wheel.y * @mouse_wheel_speed if mouse.wheel && inside
+      # @scroll_y += mouse.wheel.y * @mouse_wheel_speed if mouse.wheel && inside
 
-      return unless @mouse_down || (mouse.down && inside)
+      # return unless @mouse_down || (mouse.down && inside)
 
-      if @fill_from_bottom
-        relative_y = @content_h < @h ? @y - mouse.y + @content_h : @scroll_h - (mouse.y - @y + @scroll_y)
-      else
-        relative_y = @scroll_h - (mouse.y - @y + @scroll_y)
-        relative_y += @h - @content_h if @content_h < @h
-      end
-      line = @value.lines[relative_y.idiv(@font_height).cap_min_max(0, @value.lines.length - 1)]
-      index = line.index_at(mouse.x - @x + @scroll_x)
+      # if @fill_from_bottom
+      #   relative_y = @content_h < @h ? @y - mouse.y + @content_h : @scroll_h - (mouse.y - @y + @scroll_y)
+      # else
+      #   relative_y = @scroll_h - (mouse.y - @y + @scroll_y)
+      #   relative_y += @h - @content_h if @content_h < @h
+      # end
+      # line = @value.lines[relative_y.idiv(@font_height).cap_min_max(0, @value.lines.length - 1)]
+      # index = line.index_at(mouse.x - @x + @scroll_x)
 
-      if @mouse_down # dragging
-        @selection_end = index
-        @mouse_down = false if mouse.up
-      else # clicking
-        @on_clicked.call(mouse, self)
-        return unless (@focussed || @will_focus) && mouse.button_left
+      # if @mouse_down # dragging
+      #   @selection_end = index
+      #   @mouse_down = false if mouse.up
+      # else # clicking
+      #   @on_clicked.call(mouse, self)
+      #   return unless (@focussed || @will_focus) && mouse.button_left
 
-        if @shift
-          @selection_end = index
-        else
-          @selection_start = @selection_end = index
-        end
-        @mouse_down = true
-      end
+      #   if @shift
+      #     @selection_end = index
+      #   else
+      #     @selection_start = @selection_end = index
+      #   end
+      #   @mouse_down = true
+      # end
 
-      @ensure_cursor_visible = true
+      # @ensure_cursor_visible = true
     end
 
     def focussed?
@@ -169,6 +156,42 @@ module Input
       @focussed = false
     end
 
+    def items=(items)
+      @items = case items
+               when nil
+                 []
+               when Hash
+                 items
+               when Array
+                 items.map { |item| { text: item, value: item } }
+               else
+                 puts "Items should be an array of Strings or a Hash with text and value keys"
+                 []
+               end
+      size_to_fit
+    end
+
+    def size_to_fit
+      size_width_to_fit
+      size_height_to_fit
+    end
+
+    def size_width_to_fit
+      @w = @items.reduce(0) do |max, item|
+        iw = @font_style.string_width(item.text) + @padding * 2
+        iw > max ? iw : max
+      end
+    end
+
+    def size_height_to_fit
+      @h = @font_height * @items.length + @padding * 2
+    end
+
+    def value
+      @items[@selected_index].value
+    end
+
+    # TODO: Fix menu value=
     def value=(text)
       text = text[0, @max_length] if @max_length
       @value.replace(text)
@@ -177,7 +200,7 @@ module Input
     end
 
     def selected_index=(index)
-      @selected_index = index.cap_min_max(0, @items.length - 1)
+      @selected_index = index.clamp_wrap(0, @items.length - 1)
     end
 
     def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -211,6 +234,9 @@ module Input
     # @cursor_index - The index of the string on the @cursor_line that the cursor is found
     # @cursor_y - The y location of the cursor in relative to the scroll_h (all content)
     def prepare_render_target # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      l = @items.length
+      return if l == 0
+
       if @focussed || @will_focus
         bg = @background_color
         sc = @selection_color
@@ -231,8 +257,8 @@ module Input
       # TODO: implement sprite background
       rt.transient!
 
+      # TODO: implement scrolling
       i = -1
-      l = @items.length
       while (i += 1) < l
         y = (l - i - 1) * @font_height
         rt.primitives << { x: 0, y: y, w: @w, h: @font_height }.solid!(sc) if @selected_index == i

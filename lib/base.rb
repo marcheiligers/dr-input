@@ -12,7 +12,7 @@ module Input
 
     attr_sprite
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
-                :content_w, :content_h, :scroll_w, :scroll_h
+                :content_w, :content_h, :scroll_w, :scroll_h, :font_height
     attr_accessor :readonly, :scroll_x, :scroll_y
 
     CURSOR_FULL_TICKS = 30
@@ -146,6 +146,14 @@ module Input
       @value.replace(text)
       @selection_start = @selection_start.lesser(text.length)
       @selection_end = @selection_end.lesser(text.length)
+    end
+
+    def size_enum
+      @font_style.size_enum
+    end
+
+    def size_px
+      @font_style.size_px
     end
 
     def selection_start=(index)

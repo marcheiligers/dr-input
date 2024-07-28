@@ -34,5 +34,10 @@ module Input
 
       nil
     end
+
+    def position_in_window(input, parent = nil)
+      input.x = 0 if input.x < 0
+      input.y = 0 if input.y < 0
+    end
   end
 end

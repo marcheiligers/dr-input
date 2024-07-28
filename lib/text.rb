@@ -24,6 +24,7 @@ module Input
         0, 0,
         0, 0, @w, @h
       )
+
       super # handles focus
     end
 
