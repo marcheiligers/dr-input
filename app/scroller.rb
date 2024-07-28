@@ -11,6 +11,9 @@ class Scroller
   end
 
   def tick
+    @x = @multiline.x + @multiline.w + 20
+    @y = @multiline.y
+    @h = @multiline.h
     handle_mouse
   end
 

@@ -31,65 +31,6 @@ module Input
       $args.inputs.keyboard.key_up.clear
       $args.inputs.keyboard.key_held.clear
     end
-
-    # the following methods are modified copies from console_prompt.rb
-    # https://github.com/marcheiligers/dragonruby-game-toolkit-contrib/blob/master/dragon/console_prompt.rb
-    def autocomplete
-      if !@last_autocomplete_prefix
-        @last_autocomplete_prefix = calc_autocomplete_prefix
-        @next_candidate_index = 0
-      else
-        candidates = method_candidates(@last_autocomplete_prefix)
-        return if candidates.empty?
-
-        candidate = candidates[@next_candidate_index]
-        candidate = candidate[0..-2] + " = " if candidate.end_with? '='
-        @next_candidate_index += 1
-        @next_candidate_index = 0 if @next_candidate_index >= candidates.length
-        self.value = display_autocomplete_candidate(candidate)
-        self.selection_end = self.value.length
-      end
-    rescue Exception => e
-      puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
-      puts e.backtrace
-    end
-
-    def last_period_index
-      value.rindex('.')
-    end
-
-    def calc_autocomplete_prefix
-      if last_period_index
-        value[last_period_index + 1, value.length] || ''
-      else
-        value
-      end
-    end
-
-    def current_object
-      return GTK::ConsoleEvaluator unless last_period_index
-
-      GTK::ConsoleEvaluator.eval(value[0, last_period_index])
-    rescue NameError
-      nil
-    end
-
-    def method_candidates(prefix)
-      current_object.autocomplete_methods.map(&:to_s).select { |m| m.start_with? prefix }
-    end
-
-    def display_autocomplete_candidate(candidate)
-      if last_period_index
-        value[0, last_period_index + 1] + candidate.to_s
-      else
-        candidate.to_s
-      end
-    end
-
-    def reset_autocomplete
-      @last_autocomplete_prefix = nil
-      @next_candidate_index = 0
-    end
   end
 
   module Console
@@ -120,21 +61,29 @@ module Input
           eval_the_set_command
         end
       elsif $args.inputs.keyboard.key_down.up
-        if @command_history_index == -1
-          @nonhistory_input = current_input_str
-        end
-        if @command_history_index < (@command_history.length - 1)
-          @command_history_index += 1
-          self.current_input_str = @command_history[@command_history_index].dup
+        if @autocompleting
+          autocomplete_next(+1)
+        else
+          if @command_history_index == -1
+            @nonhistory_input = current_input_str
+          end
+          if @command_history_index < (@command_history.length - 1)
+            @command_history_index += 1
+            self.current_input_str = @command_history[@command_history_index].dup
+          end
         end
       elsif $args.inputs.keyboard.key_down.down
-        if @command_history_index == 0
-          @command_history_index = -1
-          self.current_input_str = @nonhistory_input
-          @nonhistory_input = ''
-        elsif @command_history_index > 0
-          @command_history_index -= 1
-          self.current_input_str = @command_history[@command_history_index].dup
+        if @autocompleting
+          autocomplete_next(-1)
+        else
+          if @command_history_index == 0
+            @command_history_index = -1
+            self.current_input_str = @nonhistory_input
+            @nonhistory_input = ''
+          elsif @command_history_index > 0
+            @command_history_index -= 1
+            self.current_input_str = @command_history[@command_history_index].dup
+          end
         end
       elsif inputs_scroll_up_full? $args
         scroll_up_full
@@ -149,23 +98,104 @@ module Input
         @command_history_index = -1
         @nonhistory_input = ''
       elsif $args.inputs.keyboard.key_down.tab
-        prompt.autocomplete
+        if @autocompleting
+          autocomplete_accept
+        else
+          autocomplete
+        end
       end
     end
 
     def prompt
       @prompt ||= Input::Prompt.new(
         x: 0,
-        y: 00,
+        y: 0,
         w: 1280,
         prompt: 'Press CTRL+g or ESCAPE to clear the prompt.',
         text_color: 0xFFFFFF,
         background_color: 0x000000,
         cursor_color: [219, 182, 104],
         on_unhandled_key: method(:on_unhandled_key),
-        focussed: true
+        focussed: true,
+        draw_autocomplete_menu: false
       )
     end
+
+    # the following methods are modified copies from console_prompt.rb
+    # https://github.com/marcheiligers/dragonruby-game-toolkit-contrib/blob/master/dragon/console_prompt.rb
+    def autocomplete
+      @autocompleting = true
+
+      @autocomplete_menu ||= Menu.new(
+        focussed: false,
+        text_color: 0xDDDDDD,
+        background_color: 0x333333DD
+      )
+
+      val = @prompt.value.to_s
+      @autocomplete_period_index = lpi = val.rindex('.')
+      prefix = lpi ? val[lpi + 1, val.length] || '' : val
+
+      if !@autocomplete_prefix || @autocomplete_prefix != prefix
+        @autocomplete_prefix = prefix
+        @autocomplete_index = 0
+        @autocomplete_menu.items = autocomplete_items(@autocomplete_prefix)
+      end
+    rescue Exception => e
+      puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
+      puts e.backtrace
+    end
+
+    def autocomplete_next(dir)
+      @autocomplete_menu.selected_index -= dir
+      @prompt.value = display_autocomplete_candidate(@autocomplete_menu.value)
+      @prompt.selection_start = @prompt.value.length
+    end
+
+    def autocomplete_object
+      return GTK::ConsoleEvaluator unless @autocomplete_period_index
+
+      GTK::ConsoleEvaluator.eval(@prompt.value[0, @autocomplete_period_index])
+    rescue NameError
+      nil
+    end
+
+    def autocomplete_items(prefix)
+      autocomplete_object.autocomplete_methods.map(&:to_s).select { |m| m.start_with? prefix }
+    end
+
+    def display_autocomplete_candidate(candidate)
+      candidate = candidate[0..-2] + " = " if candidate.end_with? '='
+      if @autocomplete_period_index
+        @prompt.value[0, @autocomplete_period_index + 1] + candidate.to_s
+      else
+        candidate.to_s
+      end
+    end
+
+    def autocomplete_accept
+      @prompt.selection_end = @prompt.selection_start
+      autocomplete_clear
+    end
+
+    def autocomplete_clear
+      @autocompleting = false
+      @autocomplete_prefix = nil
+      @autocomplete_index = 0
+    end
+
+    def render args
+      super
+
+      # Add the autocomplete menu last so it renders on top
+      if @autocompleting
+        @autocomplete_menu.prepare_render_target
+        @autocomplete_menu.x = @prompt.cursor_x
+        @autocomplete_menu.y = @prompt.cursor_y + @prompt.font_height
+        args.outputs.reserved << @autocomplete_menu
+      end
+    end
+
 
     def current_input_str
       prompt.value.to_s

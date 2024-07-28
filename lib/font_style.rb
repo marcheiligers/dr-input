@@ -8,7 +8,7 @@ module Input
     end
 
     class UsingSizeEnum
-      attr_reader :font_height
+      attr_reader :font_height, :font, :size_enum
 
       SIZE_ENUM = {
         small: -1,
@@ -19,7 +19,7 @@ module Input
         xxxlarge: 4
       }.freeze
 
-      def initialize(font:,  word_chars:, size_enum:)
+      def initialize(font:, word_chars:, size_enum:)
         @font = font
         @size_enum = SIZE_ENUM.fetch(size_enum || :normal, size_enum)
         _, @font_height = $gtk.calcstringbox(word_chars.join(''), @size_enum, @font)
@@ -27,6 +27,7 @@ module Input
 
       def string_width(str)
         $gtk.calcstringbox(str, @size_enum, @font)[0]
+        # $gtk.calcstringbox(str, @size_enum * Grid.texture_scale, font: @font)[0].fdiv(Grid.texture_scale)
       end
 
       def label(values)
@@ -35,9 +36,9 @@ module Input
     end
 
     class UsingSizePx
-      attr_reader :font_height
+      attr_reader :font_height, :font, :size_px
 
-      def initialize(font:,  word_chars:, size_px:)
+      def initialize(font:, word_chars:, size_px:)
         @font = font
         @size_px = size_px
         _, @font_height = $gtk.calcstringbox(word_chars.join(''), font: @font, size_px: @size_px)
@@ -45,6 +46,7 @@ module Input
 
       def string_width(str)
         $gtk.calcstringbox(str, font: @font, size_px: @size_px)[0]
+        # GTK.calcstringbox(str, size_px: @size_px * Grid.texture_scale, font: @font)[0].fdiv(Grid.texture_scale)
       end
 
       def label(values)

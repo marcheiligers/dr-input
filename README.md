@@ -42,8 +42,10 @@ Color arguments can be passed as `Hash`es or `Array`s suffixed with `_color`, or
 For example, for the `prompt` you can pass:
 * A `prompt_color` as a `Hash`, like `{ r: 100, g: 100, b: 100, a: 255 }`
 * A `prompt_color` as an `Array`, like `[100, 100, 100, 255]`
-* A `prompt_color` as an `Integer`, like `0xFF33BB`
+* A `prompt_color` as an `Integer`, like `0xFF33BB` or `0xFF33BBFF`
 * Individual `prompt_r`, `prompt_g`, `prompt_b` and `prompt_a` `Integer` values
+
+**NOTE**: For Integer (hex) rgba to work, there has to be a red component > 0. If you need red to be zero, use the `Hash` or `Array` format
 
 The argument list below will list `prompt_color` but not the individual `prompt_*` values.
 
@@ -84,6 +86,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
 * `max_length` - maximum allowed length (Integer), default `false` which disables length checks
 * `fill_from_bottom` - fill the text from the bottom, like for a log or game terminal, default `false`
+* `draw_autocomplete_menu` - if the input draws the autocomplete menu automatically, default `true`
 
 ### Attribute accessors
 
@@ -146,6 +149,8 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 
 * Adding a `background_color` significantly improves the rendering of the text.
 
+The autocomplete menu is drawn by the input by default, but this might cause layering issues where the menu draw behind other elements on the screen. Setting `draw_autocomplete_menu` to false allows you to add the `#autocomplete_menu` into the outputs whereever you like.
+
 ## Thanks
 
 * @danhealy for Zif. The Zif Input was the starting point for this. Though you wouldn't be able to tell now, it was a really solid place to start.
@@ -154,3 +159,4 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * @aquillo (on Discord) for asking me (and others) to review his code, where I learnt that the value returned by `keyboard.key` is the `tick_count` the key was pressed which made implementing key repeat much simpler than the silly thing I would've done.
 * @cookie (on Discord) for reigniting my interest in building this control by asking about how to use it, finding a new, novel use for it, and pushing me to improve the sample(s).
 * @kfischer_okarin (on Discord, aka @kfischer-okarin) for contributing `size_px`, and fixing (or forcing me to fix) the tests. This input is used in his product [Palantir](https://kfischer-okarin.itch.io/palantir) which you should check out.
+* @pvande (on Discord and GitHub) for requesting resizing and font size changes for his own nefarious needs in a CSS-like layout system, which I have interest in (and also pointing out a left over `puts` debug)

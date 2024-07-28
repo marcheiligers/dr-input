@@ -1,21 +1,22 @@
 module Input
+  NOOP = ->(*_args) {}
+
+  META_KEYS = %i[meta_left meta_right meta].freeze
+  SHIFT_KEYS = %i[shift_left shift_right shift].freeze
+  ALT_KEYS = %i[alt_left alt_right alt].freeze
+  CTRL_KEYS = %i[control_left control_right control].freeze
+  IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
+
   class Base
+    include Util
+
     attr_sprite
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
-                :content_w, :content_h, :scroll_w, :scroll_h
+                :content_w, :content_h, :scroll_w, :scroll_h, :font_height
     attr_accessor :readonly, :scroll_x, :scroll_y
 
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
-
-    NOOP = ->(*_args) {}
-
-    # BUG: Modifier keys are broken on the web ()
-    META_KEYS = %i[meta_left meta_right meta].freeze
-    SHIFT_KEYS = %i[shift_left shift_right shift].freeze
-    ALT_KEYS = %i[alt_left alt_right alt].freeze
-    CTRL_KEYS = %i[control_left control_right control].freeze
-    IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
 
     @@id = 0
 
@@ -35,25 +36,20 @@ module Input
       @w = params[:w] || 256
       @h = params[:h] || @font_height + @padding * 2
 
-      @text_color = (parse_color_nilable(params, :text) || {
-        r: params[:r] || 0,
-        g: params[:g] || 0,
-        b: params[:b] || 0,
-        a: params[:a] || 255,
-      }).merge(vertical_alignment_enum: 0)
+      @text_color = parse_color(params, :text).merge(vertical_alignment_enum: 0)
       @background_color = parse_color_nilable(params, :background)
       @blurred_background_color = parse_color_nilable(params, :blurred) || @background_color
 
       @prompt = params[:prompt] || ''
-      @prompt_color = parse_color(params, :prompt, 128, 128, 128).merge(vertical_alignment_enum: 0)
+      @prompt_color = parse_color(params, :prompt, dr: 128, dg: 128, db: 128).merge(vertical_alignment_enum: 0)
 
       @max_length = params[:max_length] || false
 
       @selection_start = params[:selection_start] || params.fetch(:value, '').length
       @selection_end = params[:selection_end] || @selection_start
 
-      @selection_color = parse_color(params, :selection, 102, 178, 255, 128)
-      @blurred_selection_color = parse_color(params, :blurred_selection, 112, 128, 144, 128)
+      @selection_color = parse_color(params, :selection, dr: 102, dg: 178, db: 255, da: 128)
+      @blurred_selection_color = parse_color(params, :blurred_selection, dr: 112, dg: 128, db: 144, da: 128)
 
       # To manage the flashing cursor
       @cursor_color = parse_color(params, :cursor)
@@ -90,44 +86,6 @@ module Input
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
 
       @value_changed = true
-    end
-
-    def parse_color(params, name, dr = 0, dg = 0, db = 0, da = 255)
-      cp = params["#{name}_color".to_sym]
-      if cp
-        case cp
-        when Array
-          { r: cp[0] || dr, g: cp[1] || dg, b: cp[2] || db, a: cp[3] || da }
-        when Hash
-          { r: cp.r || dr, g: cp.g || dg, b: cp.b || db, a: cp.a || da }
-        when Integer
-          puts "cp = #{cp}"
-          if cp > 0xFFFFFF
-            c = { r: (cp & 0xFF000000) >> 24, g: (cp & 0xFF0000) >> 16, b: (cp & 0xFF00) >> 8, a: cp & 0xFF }
-            puts "big #{c}"
-            c
-          else
-            c = { r: (cp & 0xFF0000) >> 16, g: (cp & 0xFF00) >> 8, b: cp & 0xFF, a: da }
-            puts "little #{c}"
-            c
-          end
-        else
-          raise ArgumentError, "Color #{name} should be an Array or Hash"
-        end
-      else
-        {
-          r: params["#{name}_r".to_sym] || dr,
-          g: params["#{name}_g".to_sym] || dg,
-          b: params["#{name}_b".to_sym] || db,
-          a: params["#{name}_a".to_sym] || da,
-        }
-      end
-    end
-
-    def parse_color_nilable(params, name)
-      return parse_color(params, name) if params["#{name}_color".to_sym] || params["#{name}_r".to_sym] || params["#{name}_g".to_sym] || params["#{name}_b".to_sym] || params["#{name}_a".to_sym]
-
-      nil
     end
 
     def draw_override(_ffi)
@@ -188,6 +146,14 @@ module Input
       @value.replace(text)
       @selection_start = @selection_start.lesser(text.length)
       @selection_end = @selection_end.lesser(text.length)
+    end
+
+    def size_enum
+      @font_style.size_enum
+    end
+
+    def size_px
+      @font_style.size_px
     end
 
     def selection_start=(index)

@@ -28,6 +28,61 @@ def test_calcstringbox_tab_has_no_witdh(_args, assert)
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
+# ---------------------- Util color tests ---------------------
+
+def test_parse_color_integer_rgb(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: 0 }, 'test'), { r: 0, g: 0, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: 0xFF0000 }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: 0x00FF00 }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: 0x0000FF }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
+end
+
+def test_parse_color_integer_rgba(_args, assert)
+  # NOTE: For Integer (hex) rgba to work, there has to be a red component > 0
+  assert.equal! Input::Util.parse_color({ test_color: 0x01000000 }, 'test'), { r: 1, g: 0, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: 0xFF000000 }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: 0x01FF0000 }, 'test'), { r: 1, g: 255, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: 0x0100FF00 }, 'test'), { r: 1, g: 0, b: 255, a: 0 }
+end
+
+def test_parse_color_array_rgb(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0] }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0] }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255] }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
+end
+
+def test_parse_color_array_rgb_da(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0] }, 'test', da: 1), { r: 255, g: 0, b: 0, a: 1 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0] }, 'test', da: 1), { r: 0, g: 255, b: 0, a: 1 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255] }, 'test', da: 1), { r: 0, g: 0, b: 255, a: 1 }
+end
+
+def test_parse_color_array_rgba(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0, 0] }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0, 0] }, 'test'), { r: 0, g: 255, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255, 0] }, 'test'), { r: 0, g: 0, b: 255, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: [0, 0, 0, 0] }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
+end
+
+def test_parse_color_hash_rgba(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: { r: 255, g: 0, b: 0, a: 0 } }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 255, b: 0, a: 0 } }, 'test'), { r: 0, g: 255, b: 0, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 0, b: 255, a: 0 } }, 'test'), { r: 0, g: 0, b: 255, a: 0 }
+  assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 0, b: 0, a: 0 } }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
+end
+
+def test_parse_color_hash_component(_args, assert)
+  assert.equal! Input::Util.parse_color({ test_color: { r: 255 } }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: { g: 255 } }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: { b: 255 } }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
+  assert.equal! Input::Util.parse_color({ test_color: { a: 0 } }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
+end
+
+def test_parse_color_nil(_args, assert)
+  assert.equal! Input::Util.parse_color({}, 'test'), { r: 0, g: 0, b: 0, a: 255 }
+  assert.equal! Input::Util.parse_color_nilable({}, 'test'), nil
+end
+
 # ---------------------- Word break tests ---------------------
 
 def test_find_word_break_left(_args, assert)
@@ -244,6 +299,26 @@ def test_text_drag_inside_sets_selection_size_px(args, assert)
   assert.equal! input.selection_end, 6
 end
 
+# ---------------------- menu tests --------------------------
+
+def test_menu_constrains_selected_index(args, assert)
+  menu = Input::Menu.new(items: %w[1 2 3])
+
+  menu.selected_index = 0
+  assert.equal! menu.selected_index, 0
+
+  menu.selected_index = 1
+  assert.equal! menu.selected_index, 1
+
+  menu.selected_index = 2
+  assert.equal! menu.selected_index, 2
+
+  menu.selected_index = 3
+  assert.equal! menu.selected_index, 0
+
+  menu.selected_index = -1
+  assert.equal! menu.selected_index, 2
+end
 
 # ---------------------- helper methods ----------------------
 

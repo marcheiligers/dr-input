@@ -1,3 +1,11 @@
+# v0.0.18 - 28 July 2024
+
+* Added `#size_px=`, `#size_enum=` and updated `#w=` to allow resizing or changing the font size of the `Multiline`
+  * Note: this causes the content to be "reflowed" (find word breaks) which may impact performance for large texts
+  * Note: odd pixel sizes for fonts appear to measure incorrectly, so stick to even font sizes
+  * Updated "book" sample with a resizer and font size controls to demonstrate the above
+* This release contains experimental Menu support as part of the DragonRuby console prompt replacement
+
 # v0.0.17 - 24 May 2024
 
 * Moved `FontStyle` module inside `Input` module to avoid global namespace pollution
