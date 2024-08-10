@@ -1,3 +1,7 @@
+# v0.0.19 - 10 August 2024
+
+* Slight optimizations in reflow, including not reflowing the text if you assign the same `w`, `size_enum` or `size_px`.
+
 # v0.0.18 - 28 July 2024
 
 * Added `#size_px=`, `#size_enum=` and updated `#w=` to allow resizing or changing the font size of the `Multiline`
