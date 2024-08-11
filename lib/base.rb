@@ -140,6 +140,10 @@ module Input
       @focussed
     end
 
+    def value_changed?
+      @value_changed
+    end
+
     def focus
       @will_focus = true
     end

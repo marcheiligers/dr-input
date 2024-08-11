@@ -145,6 +145,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#focus` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
 * `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
 * `#focussed?` - Returns true if the input is focussed, false otherwise
+* `#value_changed?` - Returns true if the input value changed in the last tick, false otherwise
 
 ## Notes
 
