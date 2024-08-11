@@ -207,7 +207,9 @@ module Input
       words << word
     end
 
-    def perform_word_wrap(text, width, first_line_number = 0, first_line_start = 0)
+    def perform_word_wrap(text, width, first_line_number = 0, first_line_start = 0, font_style = @font_style)
+      @font_style = font_style
+
       words = find_word_breaks(text)
       lines = LineCollection.new
       line = ''

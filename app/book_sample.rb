@@ -77,8 +77,8 @@ def tick(args)
 
     args.state.scroller = Scroller.new(args.state.multiline)
     args.state.sizer = Sizer.new(args.state.multiline)
-    args.state.dec_font_button = Button.new(1100, 645, 45, 20, '-Font', ->{ $args.state.multiline.size_px -= 1 })
-    args.state.inc_font_button = Button.new(1170, 645, 45, 20, '+Font', ->{ $args.state.multiline.size_px += 1 })
+    args.state.dec_font_button = Button.new(1100, 645, 45, 20, '-Font', ->{ $args.state.multiline.size_px -= 2 })
+    args.state.inc_font_button = Button.new(1170, 645, 45, 20, '+Font', ->{ $args.state.multiline.size_px += 2 })
   end
 
   args.state.text.tick

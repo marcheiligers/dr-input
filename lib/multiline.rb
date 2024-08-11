@@ -15,25 +15,31 @@ module Input
     end
 
     def w=(val)
+      return if @w == val
+
       @w = val
-      reflow!
+      @reflow_required = true
     end
 
     def size_enum=(val)
+      return if @font_style.size_enum == val
+
       @font_style = FontStyle.from(word_chars: @word_chars.keys, font: @font_style.font, size_enum: val)
-      reflow!
-      @font_height = @font_style.font_height
+      @reflow_required = true
     end
 
     def size_px=(val)
+      return if @font_style.size_px == val
+
       @font_style = FontStyle.from(word_chars: @word_chars.keys, font: @font_style.font, size_px: val)
-      reflow!
-      @font_height = @font_style.font_height
+      @reflow_required = true
     end
 
     def reflow!
       @ensure_line_visible = @value.lines.length - ((@scroll_y + @h) / @font_height).floor
-      @value = MultilineValue.new(@value.to_s, @word_wrap_chars, @crlf_chars, @w, font_style: @font_style)
+      @font_height = @font_style.font_height
+      @value.reflow(@w, @font_style)
+      @reflow_required = false
     end
 
     def draw_override(ffi)
@@ -324,6 +330,8 @@ module Input
     # @cursor_index - The index of the string on the @cursor_line that the cursor is found
     # @cursor_y - The y location of the cursor in relative to the scroll_h (all content)
     def prepare_render_target # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      reflow! if @reflow_required
+
       if @focussed || @will_focus
         bg = @background_color
         sc = @selection_color
