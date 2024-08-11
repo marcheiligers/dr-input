@@ -12,11 +12,12 @@ module Input
 
     attr_sprite
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
-                :content_w, :content_h, :scroll_w, :scroll_h, :font_height
+                :content_w, :content_h, :scroll_w, :scroll_h, :font_height, :value_changed
     attr_accessor :readonly, :scroll_x, :scroll_y
 
     CURSOR_FULL_TICKS = 30
     CURSOR_FLASH_TICKS = 20
+    CURSOR_HOT_TICKS = 12
 
     @@id = 0
 
@@ -100,11 +101,16 @@ module Input
       return unless @focussed || @will_focus
       return if @readonly
 
+      if @value_changed
+        @cursor_ticks = CURSOR_HOT_TICKS unless @cursor_ticks > CURSOR_HOT_TICKS
+        @cursor_dir = 1
+      end
       @cursor_ticks += @cursor_dir
-      alpha = if @cursor_ticks == CURSOR_FULL_TICKS
+
+      alpha = if @cursor_ticks >= CURSOR_FULL_TICKS
                 @cursor_dir = -1
                 255
-              elsif @cursor_ticks == 0
+              elsif @cursor_ticks <= 0
                 @cursor_dir = 1
                 0
               elsif @cursor_ticks < CURSOR_FULL_TICKS
@@ -121,6 +127,7 @@ module Input
     end
 
     def tick
+      @value_changed = false
       if @focussed
         prepare_special_keys
         handle_keyboard
@@ -181,6 +188,7 @@ module Input
       end
 
       @value.insert(start_at, end_at, str)
+      @value_changed = true
     end
     alias replace_at insert_at
 

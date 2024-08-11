@@ -91,6 +91,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 ### Attribute accessors
 
 * `value` - The current value
+* `value_changed` - Returns true if the value changed in the last `#tick`
 * `selection_start` - The start of the current selection
 * `selection_end` - The end of the current selection. This is the cursor location.
 * `lines` - The value broken into individual lines (readonly, `Multiline` only)
