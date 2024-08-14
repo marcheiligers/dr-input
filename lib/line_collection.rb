@@ -156,8 +156,7 @@ module Input
       # @punctuation_chars = params[:punctuation_chars] || %w[! % , . ; : ' " ` ) \] } * &]
       # @crlf_chars = ["\r", "\n"]
       # @word_wrap_chars = @word_chars + @punctuation_chars
-      words = []
-      word = ''
+      word_indices = [0]
       index = -1
       length = text.length
       mode = :leading_white_space
@@ -165,46 +164,38 @@ module Input
       while (index += 1) < length # mode = find a word-like thing
         case mode
         when :leading_white_space
+          # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
           if text[index].strip == '' # leading white-space
-            if @crlf_chars.include?(text[index]) # TODO: prolly need to replace \r\n with \n up front
-              words << word
-              word = "\n"
-            else
-              word << text[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
-            end
+            word_indices << index if @crlf_chars.include?(text[index]) # TODO: prolly need to replace \r\n with \n up front
           else
-            word << text[index]
             mode = :word_wrap_chars
           end
         when :word_wrap_chars # TODO: consider smarter handling. "something!)something" would be considered a word right now, theres an extra step needed
           if @word_wrap_chars.include?(text[index])
-            word << text[index]
+            # word << text[index]
           elsif @crlf_chars.include?(text[index])
-            words << word
-            word = "\n"
+            word_indices << index
             mode = :leading_white_space
           else
-            word << text[index]
             mode = :trailing_white_space
           end
         when :trailing_white_space
           if text[index].strip == '' # trailing white-space
             if @crlf_chars.include?(text[index])
-              words << word
-              word = "\n" # converting all new line chars to \n
+              word_indices << index
               mode = :leading_white_space
-            else
-              word << text[index] # TODO: consider how to render TAB, maybe convert TAB into 4 spaces?
             end
           else
-            words << word
-            word = text[index]
+            word_indices << index
             mode = :word_wrap_chars
           end
         end
       end
 
-      words << word
+      word_indices << index
+      [].tap do |result|
+        word_indices.each_cons(2) { |s, e| result << text[s, e - s] }
+      end
     end
 
     def perform_word_wrap(text, width, first_line_number = 0, first_line_start = 0, font_style = @font_style)
