@@ -8,7 +8,7 @@ module Input
     end
 
     class UsingSizeEnum
-      attr_reader :font_height, :font, :size_enum
+      attr_reader :font_height, :font, :size_enum, :size_px
 
       SIZE_ENUM = {
         small: -1,
@@ -36,7 +36,7 @@ module Input
     end
 
     class UsingSizePx
-      attr_reader :font_height, :font, :size_px
+      attr_reader :font_height, :font, :size_px, :size_enum
 
       def initialize(font:, word_chars:, size_px:)
         @font = font

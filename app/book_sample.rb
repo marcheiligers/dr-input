@@ -62,6 +62,7 @@ def tick(args)
       selection_start: 0,
       background_color: [220, 220, 220],
       blurred_background_color: [192, 192, 192],
+      cursor_color: 0x6a5acd,
       on_unhandled_key: lambda do |key, input|
         if key == :tab
           input.blur

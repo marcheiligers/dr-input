@@ -88,5 +88,13 @@ module Input
     def replace(text)
       @lines = @line_parser.perform_word_wrap(text, @w)
     end
+
+    def reflow(w, font_style)
+      return if @w == w && @font_style == font_style
+
+      @w = w
+      @font_style = font_style
+      @lines = @line_parser.perform_word_wrap(@lines.text, w, 0, 0, font_style)
+    end
   end
 end
