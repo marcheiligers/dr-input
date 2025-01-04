@@ -3,13 +3,13 @@ devid=fascinationworks
 devtitle=Fascination Works
 gameid=dr-input
 gametitle=Dragon Ruby Input
-version=0.0.16
+version=0.0.21
 icon=metadata/icon.png
 
 # === Flags available at all licensing tiers ===
 
 # Defines the render scale quality for sprites. scale_quality=0 (default) is nearest neighbor, scale_quality=1 is linear, scale_quality=2 is antialiased.
-scale_quality=0
+scale_quality=2
 
 # === Flags available in DragonRuby Game Toolkit Pro ====
 
@@ -20,7 +20,7 @@ scale_quality=0
 # packageid=org.dev.gamename
 
 # Setting this property to true will enable High DPI rendering (try in combination with scale_quality to see what looks best)
-highdpi=false
+highdpi=true
 
 # === Portrait Mode ===
 # The orientation can be set to either landscape (1280x720) or portrait (720x1280)
@@ -31,7 +31,7 @@ highdpi=false
 # HD Mode: when enabled, will give you 720p, 1080p, 1440p, 4k, and 5k rendering options
 # Check out the following YouTube Video for a demo of DragonRuby's HD Capabilities
 # https://youtu.be/Rnc6z84zaa4
-hd=false
+hd=true
 # hd_letterbox=false
 # hd_max_scale=400
 

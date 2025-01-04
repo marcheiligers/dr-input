@@ -1,14 +1,9 @@
 module Input
   NOOP = ->(*_args) {}
 
-  META_KEYS = %i[meta_left meta_right meta].freeze
-  SHIFT_KEYS = %i[shift_left shift_right shift].freeze
-  ALT_KEYS = %i[alt_left alt_right alt].freeze
-  CTRL_KEYS = %i[control_left control_right control].freeze
-  IGNORE_KEYS = (%i[raw_key char] + META_KEYS + SHIFT_KEYS + ALT_KEYS + CTRL_KEYS).freeze
-
   class Base
     include Util
+    include Keyboard
 
     attr_sprite
     attr_reader :value, :selection_start, :selection_end, :cursor_x, :cursor_y,
@@ -59,10 +54,7 @@ module Input
       @cursor_dir = 1
       @ensure_cursor_visible = true
 
-      @key_repeat_delay = params[:key_repeat_delay] || 20
-      @key_repeat_debounce = params[:key_repeat_debounce] || 4
-
-      # Mouse focus for seletion
+      # Mouse focus for selection
       @mouse_down = false
       @mouse_wheel_speed = params[:mouse_wheel_speed] || @font_height
 
@@ -80,13 +72,16 @@ module Input
       @scroll_h = @h
 
       @readonly = params[:readonly] || false
-      @focussed = params[:focussed] || false
+      @focussed = params[:focussed] || params[:focused] || false
       @will_focus = false # Get the focus at the end of the tick
 
       @on_clicked = params[:on_clicked] || NOOP
+      # @on_handled_key = params[:on_handled_key] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
 
       @value_changed = true
+
+      initialize_keyboard(params)
     end
 
     def draw_override(_ffi)
@@ -139,6 +134,7 @@ module Input
     def focussed?
       @focussed
     end
+    alias focused? focussed?
 
     def value_changed?
       @value_changed
@@ -356,7 +352,7 @@ module Input
     def copy
       return if @selection_start == @selection_end
 
-      $clipboard = current_selection
+      $gtk.ffi_misc.setclipboard(current_selection)
     end
 
     def cut
@@ -375,25 +371,7 @@ module Input
     end
 
     def paste
-      insert($clipboard)
-    end
-
-    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      keyboard = $args.inputs.keyboard
-
-      tick_count = $args.tick_count
-      repeat_keys = keyboard.key_held.truthy_keys.select do |key|
-        ticks = tick_count - keyboard.key_held.send(key).to_i
-        ticks > @key_repeat_delay && ticks % @key_repeat_debounce == 0
-      end
-      @down_keys = keyboard.key_down.truthy_keys.concat(repeat_keys) - IGNORE_KEYS
-
-      # Find special keys
-      special_keys = keyboard.key_down.truthy_keys + keyboard.key_held.truthy_keys
-      @meta = (special_keys & META_KEYS).any?
-      @alt = (special_keys & ALT_KEYS).any?
-      @shift = (special_keys & SHIFT_KEYS).any?
-      @ctrl = (special_keys & CTRL_KEYS).any?
+      insert($gtk.ffi_misc.getclipboard)
     end
 
     def rect

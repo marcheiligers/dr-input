@@ -1,9 +1,10 @@
 module Input
   class Menu
     include Util
+    include Keyboard
 
     attr_sprite
-    attr_reader :selected_index, :content_w, :content_h, :scroll_w, :scroll_h
+    attr_reader :selected_index, :content_w, :content_h, :scroll_w, :scroll_h, :items
     attr_accessor :readonly, :scroll_x, :scroll_y
 
     @@id = 0
@@ -17,7 +18,7 @@ module Input
 
       @padding = params[:padding] || 2
 
-      self.items = params[:items]
+      self.items = params[:items] # self.items so that items= is called
 
       @w = params[:w] || size_width_to_fit
       @h = params[:h] || size_height_to_fit
@@ -31,10 +32,7 @@ module Input
       @selection_color = parse_color(params, :selection, dr: 102, dg: 178, db: 255, da: 128)
       @blurred_selection_color = parse_color(params, :blurred_selection, dr: 112, dg: 128, db: 144, da: 128)
 
-      @key_repeat_delay = params[:key_repeat_delay] || 20
-      @key_repeat_debounce = params[:key_repeat_debounce] || 4
-
-      # Mouse focus for seletion
+      # Mouse focus for selection
       @mouse_down = false
       @mouse_wheel_speed = params[:mouse_wheel_speed] || @font_height
 
@@ -56,6 +54,8 @@ module Input
 
       @on_selected = params[:on_selected] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
+
+      initialize_keyboard(params)
     end
 
     def draw_override(ffi)
@@ -71,13 +71,13 @@ module Input
       # angle_anchor_x, angle_anchor_y,
       # source_x, source_y, source_w, source_h
       ffi.draw_sprite_3(
-        @x, @y, @w, @h,
+        @x, @y, @content_w, @content_h,
         @path,
         0, 255, 255, 255, 255,
         nil, nil, nil, nil,
         false, false,
         0, 0,
-        0, 0, @w, @h
+        0, 0, @content_w, @content_h
       )
 
       return unless @will_focus
@@ -147,6 +147,7 @@ module Input
     def focussed?
       @focussed
     end
+    alias focused? focussed?
 
     def focus
       @will_focus = true
@@ -161,14 +162,19 @@ module Input
                when nil
                  []
                when Hash
-                 items
+                 items.map { |text, val| { text: item, value: item } }
                when Array
-                 items.map { |item| { text: item, value: item } }
+                 if items[0].is_a?(Hash)
+                   items
+                 else
+                   items.map { |item| { text: item.to_s, value: item } }
+                 end
                else
                  puts "Items should be an array of Strings or a Hash with text and value keys"
                  []
                end
       size_to_fit
+      @selected_index = 0
     end
 
     def size_to_fit
@@ -193,32 +199,14 @@ module Input
 
     # TODO: Fix menu value=
     def value=(text)
-      text = text[0, @max_length] if @max_length
-      @value.replace(text)
-      @selection_start = @selection_start.lesser(text.length)
-      @selection_end = @selection_end.lesser(text.length)
+      # text = text[0, @max_length] if @max_length
+      # @value.replace(text)
+      # @selection_start = @selection_start.lesser(text.length)
+      # @selection_end = @selection_end.lesser(text.length)
     end
 
     def selected_index=(index)
       @selected_index = index.clamp_wrap(0, @items.length - 1)
-    end
-
-    def prepare_special_keys # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      keyboard = $args.inputs.keyboard
-
-      tick_count = $args.tick_count
-      repeat_keys = keyboard.key_held.truthy_keys.select do |key|
-        ticks = tick_count - keyboard.key_held.send(key).to_i
-        ticks > @key_repeat_delay && ticks % @key_repeat_debounce == 0
-      end
-      @down_keys = keyboard.key_down.truthy_keys.concat(repeat_keys) - IGNORE_KEYS
-
-      # Find special keys
-      special_keys = keyboard.key_down.truthy_keys + keyboard.key_held.truthy_keys
-      @meta = (special_keys & META_KEYS).any?
-      @alt = (special_keys & ALT_KEYS).any?
-      @shift = (special_keys & SHIFT_KEYS).any?
-      @ctrl = (special_keys & CTRL_KEYS).any?
     end
 
     # @scroll_w - The `scroll_w` read-only property is a measurement of the width of an element's content,
@@ -245,29 +233,74 @@ module Input
         sc = @blurred_selection_color
       end
 
-      # TODO: Implement line spacing
-      @scroll_w = @content_w = @w
-      @scroll_h = @items.length * @font_height + 2 * @padding
-      @content_h = @h.lesser(@scroll_h)
+      # TODO: Attach menu to another widget so we space above of below
+      # TODO: A bounding box? Assuming grid for now
+      grid = $args.grid
+      avail_h = if @y - @h > 0 || @y + @h < grid.h # can we render fully below or above?
+        @h
+      else # ok, we gotta scroll
+        @y.greater(grid.h - @y)
+      end
+      first_item, num_items = items_to_show(avail_h)
+      @content_h = num_items * @font_height
+      @content_w = @w
 
       rt = $args.outputs[@path]
-      rt.w = @w
-      rt.h = @h
+      rt.w = @content_w
+      rt.h = @content_h
       rt.background_color = bg
-      # TODO: implement sprite background
       rt.transient!
 
-      # TODO: implement scrolling
+      # TODO: implement mouse scrolling
+      @scroll_w = @content_w
+      @scroll_h = @items.length * @font_height + 2 * @padding
+      @scroll_x = 0
+      @scroll_y = first_item * @font_height
       i = -1
-      while (i += 1) < l
-        y = (l - i - 1) * @font_height
-        rt.primitives << { x: 0, y: y, w: @w, h: @font_height }.solid!(sc) if @selected_index == i
-        rt.primitives << @font_style.label(x: @padding, y: y, text: @items[i].text, **@text_color)
+      while (i += 1) < num_items
+        y = (num_items - i - 1) * @font_height
+        rt.primitives << { x: 0, y: y, w: @content_w, h: @font_height }.solid!(sc) if @selected_index == first_item + i
+        rt.primitives << @font_style.label(x: @padding, y: y, text: @items[first_item + i].text, **@text_color)
+      end
+
+      position
+    end
+
+    def items_to_show(avail_h)
+      # TODO: line spacing in menu
+      num_items = (avail_h / @font_height).floor.lesser(@items.length) - 1
+      half_num_items = num_items.idiv(2)
+      if half_num_items > @selected_index
+        [0, num_items + 1]
+      elsif half_num_items > @items.length - @selected_index - (num_items.even? ? 1 : 2)
+        [@items.length - num_items - 1, num_items + 1]
+      else
+        [@selected_index - half_num_items, num_items + 1]
       end
     end
 
+    # TODO: implement positioning
+    def position
+      if @y + @content_h > $args.grid.h # over the top?
+        if @y - @content_h < 0 # also down under?
+          @y = $args.grid.h - @content_h # move down so we fit
+        else
+          @y -= @content_h # render down
+        end
+      end
+
+      if @x + @content_w > $args.grid.w # too far?
+        if @x - @content_w < 0 # also too left?
+          @x = $args.grid.w - @content_w # move left so we fit
+        else
+          @x -= @content_w # render left
+        end
+      end
+    end
+
+    # TODO: update @w and @h with @content_*
     def rect
-      { x: @x, y: @y, w: @w, h: @h }
+      { x: @x, y: @y, w: @content_w, h: @content_h }
     end
 
     def content_rect

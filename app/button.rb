@@ -31,6 +31,6 @@ class Button
       ffi.draw_solid(@x, @y, @w, @h, 220, 220, 220, 255)
     end
     # ffi.draw_label_5 x, y, text, size_enum, alignment_enum, r, g, b, a, font, vertical_alignment_enum, blendmode_enum, size_px, angle_anchor_x, angle_anchor_y
-    ffi.draw_label_5 @x + @w / 2, @y + @h / 2, @text, nil, 1, 0, 0, 0, 255, FONT, 1, 1, @h - 10, 0.5, 0.5
+    ffi.draw_label_5 @x + @w / 2, @y + @h / 2, @text, nil, 1, 0, 0, 0, 255, '', 1, 1, @h - 10, 0.5, 0.5
   end
 end
