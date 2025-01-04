@@ -103,6 +103,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `scroll_y` - The y position of the full scrollable area as rendered. NOTE: `scroll_y = 0` is the bottom
 * `scroll_w` - The width of the full scrollable area as rendered (readonly)
 * `scroll_h` - The height of the full scrollable area as rendered (readonly)
+* `shift_lock` - If Shift Lock is engaged
 
 ### Instance Methods
 
@@ -146,6 +147,10 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
 * `#focussed?` - Returns true if the input is focussed, false otherwise
 * `#value_changed?` - Returns true if the input value changed in the last tick, false otherwise
+
+## Console replacement
+
+This library includes the ability to replace the default DragonRuby Console (`~`). Simply call `Input.replace_console!` once to enable this.
 
 ## Notes
 

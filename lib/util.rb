@@ -41,3 +41,10 @@ module Input
     end
   end
 end
+
+
+def debug(message, level = :info)
+  puts "[#{level}] #{message}" if $debug
+end
+
+$debug = true

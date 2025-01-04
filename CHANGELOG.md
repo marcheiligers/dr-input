@@ -1,3 +1,12 @@
+# v0.0.21 - 4 Jan 2024
+
+* Updated clipboard to use getclipboard and setclipboard so the system clipboard is used
+* Updated menu to handle scrolling with keyboard if there are too many items, including menu sizing
+* First pass at menu positioning which tries to maximize the height to show as many items as possible
+* Added `:focused` alias for `:focussed` and `focused?` for `focussed?`
+* Added autocomplete filtering as you type
+* Added `#shift_lock` attribute which helps with autocomplete on the prompt
+
 # v0.0.20 - 11 August 2024
 
 * The cursor now returns to (nearly) full alpha while you're typing (or the value is changed in some other way)
