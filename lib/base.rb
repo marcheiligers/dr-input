@@ -61,8 +61,6 @@ module Input
       # Render target for text scrolling
       @path = "__input_#{@@id += 1}"
 
-      @scroll_x = 0
-      @scroll_y = 0
       @content_w = @w
       @content_h = @h
 
@@ -113,11 +111,12 @@ module Input
               else
                 255
               end
+
       rt.primitives << {
         x: (@cursor_x - 1).greater(0) - @scroll_x,
-        y: @cursor_y - @padding - @scroll_y,
+        y: @cursor_y - @scroll_y,
         w: @cursor_width,
-        h: @font_height + @padding * 2
+        h: @font_height
       }.solid!(**@cursor_color, a: alpha)
     end
 
@@ -174,21 +173,21 @@ module Input
     def insert(str)
       @selection_end, @selection_start = @selection_start, @selection_end if @selection_start > @selection_end
       insert_at(str, @selection_start, @selection_end)
-
-      @selection_start += str.length
-      @selection_end = @selection_start
     end
     alias replace insert
 
     def insert_at(str, start_at, end_at = start_at)
       end_at, start_at = start_at, end_at if start_at > end_at
       if @max_length && @value.length - (end_at - start_at) + str.length > @max_length
-        str = str[0, @max_length - @value.length + (end_at - start_at) - str.length]
+        str = str[0, @max_length - @value.length + (end_at - start_at)]
         return if str.nil? # too long
       end
 
       @value.insert(start_at, end_at, str)
       @value_changed = true
+
+      @selection_start += str.length
+      @selection_end = @selection_start
     end
     alias replace_at insert_at
 

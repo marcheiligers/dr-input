@@ -1,28 +1,28 @@
-def xtest_calcstringbox_works_in_tests(_args, assert)
+def test_calcstringbox_works_in_tests(_args, assert)
   w, h = $gtk.calcstringbox('1234567890', 0, '')
   assert.true! w > 0
   assert.true! h > 0
 end
 
-def xtest_calcstringbox_new_line_has_no_width(_args, assert)
+def test_calcstringbox_new_line_has_no_width(_args, assert)
   w, h = $gtk.calcstringbox("\n", 0, '')
   assert.equal! w, 0.0
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
-def xtest_calcstringbox_double_new_line_has_no_width(_args, assert)
+def test_calcstringbox_double_new_line_has_no_width(_args, assert)
   w, h = $gtk.calcstringbox("\n\n", 0, '')
   assert.equal! w, 0.0
   assert.equal! h, 22.0 # Yep, it has a height
 end
 
-def xtest_calcstringbox_with_day_roman_new_line_has_width(_args, assert)
+def test_calcstringbox_with_day_roman_new_line_has_width(_args, assert)
   w, h = $gtk.calcstringbox("\n\n", 0, 'fonts/day-roman/DAYROM__.ttf')
   assert.false! w == 0.0 # :/
   assert.false! h == 0.0 # :/
 end
 
-def xtest_calcstringbox_tab_has_no_witdh(_args, assert)
+def test_calcstringbox_tab_has_no_witdh(_args, assert)
   w, h = $gtk.calcstringbox("\t", 0, '')
   assert.equal! w, 0.0 # Yep, it has no width :/
   assert.equal! h, 22.0 # Yep, it has a height
@@ -30,14 +30,14 @@ end
 
 # ---------------------- Util color tests ---------------------
 
-def xtest_parse_color_integer_rgb(_args, assert)
+def test_parse_color_integer_rgb(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: 0 }, 'test'), { r: 0, g: 0, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: 0xFF0000 }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: 0x00FF00 }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: 0x0000FF }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
 end
 
-def xtest_parse_color_integer_rgba(_args, assert)
+def test_parse_color_integer_rgba(_args, assert)
   # NOTE: For Integer (hex) rgba to work, there has to be a red component > 0
   assert.equal! Input::Util.parse_color({ test_color: 0x01000000 }, 'test'), { r: 1, g: 0, b: 0, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: 0xFF000000 }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
@@ -45,47 +45,47 @@ def xtest_parse_color_integer_rgba(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: 0x0100FF00 }, 'test'), { r: 1, g: 0, b: 255, a: 0 }
 end
 
-def xtest_parse_color_array_rgb(_args, assert)
+def test_parse_color_array_rgb(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0] }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0] }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255] }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
 end
 
-def xtest_parse_color_array_rgb_da(_args, assert)
+def test_parse_color_array_rgb_da(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0] }, 'test', da: 1), { r: 255, g: 0, b: 0, a: 1 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0] }, 'test', da: 1), { r: 0, g: 255, b: 0, a: 1 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255] }, 'test', da: 1), { r: 0, g: 0, b: 255, a: 1 }
 end
 
-def xtest_parse_color_array_rgba(_args, assert)
+def test_parse_color_array_rgba(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: [255, 0, 0, 0] }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 255, 0, 0] }, 'test'), { r: 0, g: 255, b: 0, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 0, 255, 0] }, 'test'), { r: 0, g: 0, b: 255, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: [0, 0, 0, 0] }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
 end
 
-def xtest_parse_color_hash_rgba(_args, assert)
+def test_parse_color_hash_rgba(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: { r: 255, g: 0, b: 0, a: 0 } }, 'test'), { r: 255, g: 0, b: 0, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 255, b: 0, a: 0 } }, 'test'), { r: 0, g: 255, b: 0, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 0, b: 255, a: 0 } }, 'test'), { r: 0, g: 0, b: 255, a: 0 }
   assert.equal! Input::Util.parse_color({ test_color: { r: 0, g: 0, b: 0, a: 0 } }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
 end
 
-def xtest_parse_color_hash_component(_args, assert)
+def test_parse_color_hash_component(_args, assert)
   assert.equal! Input::Util.parse_color({ test_color: { r: 255 } }, 'test'), { r: 255, g: 0, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: { g: 255 } }, 'test'), { r: 0, g: 255, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: { b: 255 } }, 'test'), { r: 0, g: 0, b: 255, a: 255 }
   assert.equal! Input::Util.parse_color({ test_color: { a: 0 } }, 'test'), { r: 0, g: 0, b: 0, a: 0 }
 end
 
-def xtest_parse_color_nil(_args, assert)
+def test_parse_color_nil(_args, assert)
   assert.equal! Input::Util.parse_color({}, 'test'), { r: 0, g: 0, b: 0, a: 255 }
   assert.equal! Input::Util.parse_color_nilable({}, 'test'), nil
 end
 
 # ---------------------- Word break tests ---------------------
 
-def xtest_find_word_break_left(_args, assert)
+def test_find_word_break_left(_args, assert)
   assert_finds_word_break_left(assert, '|word test', '|word test')
   assert_finds_word_break_left(assert, 'wo|rd test', '|word test')
   assert_finds_word_break_left(assert, 'word| test', '|word test')
@@ -94,7 +94,7 @@ def xtest_find_word_break_left(_args, assert)
   assert_finds_word_break_left(assert, 'word test|', 'word |test')
 end
 
-def xtest_find_word_break_right(_args, assert)
+def test_find_word_break_right(_args, assert)
   assert_finds_word_break_right(assert, '|word test', 'word| test')
   assert_finds_word_break_right(assert, 'wo|rd test', 'word| test')
   assert_finds_word_break_right(assert, 'wor|d test', 'word| test')
@@ -106,7 +106,7 @@ end
 
 # ---------------------- Current word tests -------------------
 
-def xtest_finds_current_word(_args, assert)
+def test_finds_current_word(_args, assert)
   assert_current_word(assert, '|word test', nil)
   assert_current_word(assert, 'w|ord test', 'word')
   assert_current_word(assert, 'wor|d test', 'word')
@@ -116,77 +116,123 @@ end
 
 # ---------------------- Line wrap tests ----------------------
 
-def xtest_find_word_breaks_empty_value(_args, assert)
+def test_find_word_breaks_empty_value(_args, assert)
   assert.equal! word_wrap_result(''), ['']
 end
 
-def xtest_find_word_breaks_single_space(_args, assert)
+def test_find_word_breaks_single_space(_args, assert)
   assert.equal! word_wrap_result(' '), [' ']
 end
 
-def xtest_find_word_breaks_single_char(_args, assert)
+def test_find_word_breaks_single_char(_args, assert)
   assert.equal! word_wrap_result('a'), ['a']
 end
 
-def xtest_multiline_word_breaks_two_words(_args, assert)
+def test_multiline_word_breaks_two_words(_args, assert)
   assert.equal! word_wrap_result('Hello, world'), ['Hello, ', 'world']
 end
 
-def xtest_find_word_breaks_leading_and_trailing_white_space(_args, assert)
+def test_find_word_breaks_leading_and_trailing_white_space(_args, assert)
   assert.equal! word_wrap_result(" \t  hello \t "), [" \t  hello \t "]
 end
 
-def xtest_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
+def test_find_word_breaks_leading_and_trailing_white_space_multiple_words(_args, assert)
   assert.equal! word_wrap_result(" \t  hello, \t  world \t"), [" \t  hello, \t  ", "world \t"]
 end
 
-def xtest_multiline_word_breaks_trailing_new_line(_args, assert)
+def test_multiline_word_breaks_trailing_new_line(_args, assert)
   assert.equal! word_wrap_result("hello, \n"), ['hello, ', "\n"]
 end
 
-def xtest_multiline_word_breaks_new_line(_args, assert)
+def test_multiline_word_breaks_new_line(_args, assert)
   assert.equal! word_wrap_result("hello, \n  world"), ['hello, ', "\n  world"]
 end
 
-def xtest_multiline_word_breaks_double_new_line(_args, assert)
+def test_multiline_word_breaks_double_new_line(_args, assert)
   assert.equal! word_wrap_result("hello, \n\n  world"), ['hello, ', "\n", "\n  world"]
 end
 
-def xtest_multiline_word_breaks_multiple_new_lines(_args, assert)
+def test_multiline_word_breaks_multiple_new_lines(_args, assert)
   assert.equal! word_wrap_result("hello, \n\n\n  world"), ['hello, ', "\n", "\n", "\n  world"]
 end
 
-def xtest_perform_word_wrap_multiple_new_lines(_args, assert)
+def test_perform_word_wrap_multiple_new_lines(_args, assert)
   assert.equal! word_wrap_result("1\n\n\n2"), ['1', "\n", "\n", "\n2"]
 end
 
-def xtest_perform_word_wrap_trailing_new_line(_args, assert)
+def test_perform_word_wrap_trailing_new_line(_args, assert)
   assert.equal! word_wrap_result("1\n"), ['1', "\n"]
 end
 
-def xtest_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
+def test_find_word_breaks_trailing_new_line_after_wrap(_args, assert)
   assert.equal! word_wrap_result("1234567890 1234567890 1234567890\n"), ['1234567890 ', '1234567890 ', '1234567890', "\n"]
 end
 
-def xtest_multiline_word_breaks_a_very_long_word(_args, assert)
+def test_multiline_word_breaks_a_very_long_word(_args, assert)
   assert.equal! word_wrap_result('Supercalifragilisticexpialidocious'), ['Supercalif', 'ragilistic', 'expialidoc', 'ious']
 end
 
-def xtest_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_args, assert)
+def test_multiline_word_breaks_breaks_very_long_word_after_something_that_isnt(_args, assert)
   assert.equal! word_wrap_result('Super califragilisticexpialidocious'), ['Super ', 'califragil', 'isticexpia', 'lidocious']
 end
 
+# ---------------------- Max length tests ----------------------
+
+def test_no_max_length(_args, assert)
+  input = build_text_input('1234567890', 10, 10)
+  input.insert('abc')
+
+  assert.equal! input.value.to_s, '1234567890abc'
+  assert.equal! input.selection_end, 13
+  assert.equal! input.selection_start, 13
+end
+
+def test_max_length(_args, assert)
+  input = build_text_input('1234567890', 10, 10, max_length: 10)
+  input.insert('abc')
+
+  assert.equal! input.value.to_s, '1234567890'
+  assert.equal! input.selection_end, 10
+  assert.equal! input.selection_start, 10
+end
+
+def test_max_length_inserts_as_much_as_possible(_args, assert)
+  input = build_text_input('1234567890', 10, 10, max_length: 11)
+  input.insert('abc')
+
+  assert.equal! input.value.to_s, '1234567890a'
+  assert.equal! input.selection_end, 11
+  assert.equal! input.selection_start, 11
+end
+
+def test_max_length_inserts_as_much_as_possible_in_the_middle(_args, assert)
+  input = build_text_input('1234567890', 5, 5, max_length: 11)
+  input.insert('abc')
+
+  assert.equal! input.value.to_s, '12345a67890'
+  assert.equal! input.selection_end, 6
+  assert.equal! input.selection_start, 6
+end
+
+def test_max_length_inserts_as_much_as_possible_in_the_middle_overwriting(_args, assert)
+  input = build_text_input('1234567890', 5, 6, max_length: 11)
+  input.insert('abc')
+
+  assert.equal! input.value.to_s, '12345ab7890'
+  assert.equal! input.selection_end, 7
+  assert.equal! input.selection_start, 7
+end
 
 # ---------------------- Font size calculation tests ----------------------
 
-def xtest_default_height_is_calculated_from_padding_and_font_height(_args, assert)
+def test_default_height_is_calculated_from_padding_and_font_height(_args, assert)
   _, font_height = $gtk.calcstringbox('A', 0)
   text_input = Input::Text.new(padding: 10, size_enum: 0)
 
   assert.equal! text_input.h, font_height + 20
 end
 
-def xtest_multiline_scrolls_in_font_height_steps_by_default(args, assert)
+def test_multiline_scrolls_in_font_height_steps_by_default(args, assert)
   $args = args
   _, font_height = $gtk.calcstringbox('A', 0)
   input = Input::Multiline.new(x: 100, y: 100, w: 100, size_enum: 0)
@@ -203,7 +249,7 @@ def xtest_multiline_scrolls_in_font_height_steps_by_default(args, assert)
   assert.equal! input.scroll_y, font_height
 end
 
-def xtest_text_click_inside_sets_selection(args, assert)
+def test_text_click_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, _ = $gtk.calcstringbox('ABC', 0)
   input = Input::Text.new(x: 100, y: 100, w: 100, size_enum: 0, value: 'ABCDEF', focussed: true)
@@ -219,7 +265,7 @@ def xtest_text_click_inside_sets_selection(args, assert)
   assert.equal! input.selection_end, 3
 end
 
-def xtest_text_drag_inside_sets_selection(args, assert)
+def test_text_drag_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, _ = $gtk.calcstringbox('ABC', 0)
   six_letters_wide, _ = $gtk.calcstringbox('ABCDEF', 0)
@@ -236,7 +282,7 @@ def xtest_text_drag_inside_sets_selection(args, assert)
   assert.equal! input.selection_end, 6
 end
 
-def xtest_multiline_click_inside_sets_selection(args, assert)
+def test_multiline_click_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
   input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
@@ -254,7 +300,7 @@ def xtest_multiline_click_inside_sets_selection(args, assert)
   assert.equal! input.selection_end, 10
 end
 
-def xtest_text_drag_inside_sets_selection(args, assert)
+def test_text_drag_inside_sets_selection(args, assert)
   $args = args
   three_letters_wide, font_height = $gtk.calcstringbox('ABC', 0)
   input = Input::Multiline.new(x: 100, y: 100, w: 100, h: font_height * 2, size_enum: 0, value: "ABCDEF\nGHIJKL", focussed: true)
@@ -275,14 +321,14 @@ end
 
 # Two representative test cases using size_px instead of size_enum
 
-def xtest_default_height_is_calculated_from_padding_and_font_height_size_px(_args, assert)
+def test_default_height_is_calculated_from_padding_and_font_height_size_px(_args, assert)
   _, font_height = $gtk.calcstringbox('A', size_px: 30)
   text_input = Input::Text.new(padding: 10, size_px: 30)
 
   assert.equal! text_input.h, font_height + 20
 end
 
-def xtest_text_drag_inside_sets_selection_size_px(args, assert)
+def test_text_drag_inside_sets_selection_size_px(args, assert)
   $args = args
   three_letters_wide, _ = $gtk.calcstringbox('ABC', size_px: 44)
   six_letters_wide, _ = $gtk.calcstringbox('ABCDEF', size_px: 44)
@@ -301,7 +347,7 @@ end
 
 # ---------------------- menu tests --------------------------
 
-def xtest_menu_constrains_selected_index(args, assert)
+def test_menu_constrains_selected_index(args, assert)
   menu = Input::Menu.new(items: %w[1 2 3])
 
   menu.selected_index = 0
@@ -391,8 +437,8 @@ end
 
 # ---------------------- helper methods ----------------------
 
-def build_text_input(value, selection_start = 0, selection_end = selection_start)
-  input = Input::Text.new(value: value, selection_start: selection_start, selection_end: selection_end)
+def build_text_input(value, selection_start = 0, selection_end = selection_start, **attr)
+  Input::Text.new(value: value, selection_start: selection_start, selection_end: selection_end, **attr)
 end
 
 def make_word_break_error(input, actual, expected)

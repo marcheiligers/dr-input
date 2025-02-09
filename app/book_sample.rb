@@ -26,6 +26,7 @@ def tick(args)
       x: 20,
       y: 660,
       w: 1240,
+      padding: 10,
       prompt: 'Title',
       value: "Alice's Adventures in Wonderland 🐰",
       font: FONT,

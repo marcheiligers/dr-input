@@ -1,4 +1,9 @@
-# v0.0.21 - 4 Jan 2024
+# v0.0.22 - 9 February 2025
+
+* Fixed a bug when using `max_length` where `selection_end` (and `selection_start`) where incorrectly set (thanks to @TheCire for reporting in Discord).
+* Fixed a cursor placement and selection background issues in the `Text` component.
+
+# v0.0.21 - 4 January 2025
 
 * Updated clipboard to use getclipboard and setclipboard so the system clipboard is used
 * Updated menu to handle scrolling with keyboard if there are too many items, including menu sizing
