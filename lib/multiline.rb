@@ -358,10 +358,10 @@ module Input
         @cursor_x = 0
         @scroll_x = 0
         if @fill_from_bottom
-          @cursor_y = 0
+          @cursor_y = -@padding
           rt.primitives << @font_style.label(x: 0, y: 0, text: @prompt, **@prompt_color)
         else
-          @cursor_y = @h - @font_height
+          @cursor_y = @h - @font_height - @padding
           rt.primitives << @font_style.label(x: 0, y: @h - @font_height, text: @prompt, **@prompt_color)
         end
       else
@@ -374,7 +374,7 @@ module Input
           @cursor_index = 0
         end
 
-        @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height
+        @cursor_y = @scroll_h - (@cursor_line.number + 1) * @font_height - @padding
         @cursor_y += @fill_from_bottom ? @content_h : @h - @content_h if @content_h < @h
         if @scroll_h <= @h # total height is less than height of the control
           @scroll_y = @fill_from_bottom ? @scroll_h : 0

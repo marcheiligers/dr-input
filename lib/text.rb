@@ -169,13 +169,13 @@ module Input
 
       if @value.empty?
         @cursor_x = 0
-        @cursor_y = 0
+        @cursor_y = @padding
         @scroll_x = 0
         rt.primitives << @font_style.label(x: 0, y: @padding, text: @prompt, **@prompt_color)
       else
         # CURSOR AND SCROLL LOCATION
         @cursor_x = @font_style.string_width(@value[0, @selection_end].to_s)
-        @cursor_y = 0
+        @cursor_y = @padding
 
         if @content_w < @w
           @scroll_x = 0
@@ -199,7 +199,7 @@ module Input
             right = (@font_style.string_width(@value[0, @selection_start].to_s) - @scroll_x).cap_min_max(0, @w)
           end
 
-          rt.primitives << { x: left, y: @padding, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
+          rt.primitives << { x: left, y: 0, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
         end
 
         # TEXT
