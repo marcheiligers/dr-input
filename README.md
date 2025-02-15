@@ -148,6 +148,31 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#focussed?` - Returns true if the input is focussed, false otherwise
 * `#value_changed?` - Returns true if the input value changed in the last tick, false otherwise
 
+## Special keyboard handling
+
+There may be cases where you want to do some special keyboard handling, like filtering out certain characters. In order to do this, create a subclass of `Input::Text` or `Input::Multiline` and override the `handle_keyboard` method, calling `super` when your special handling is done. The following instance variables are available:
+
+* `@meta` - true if the Meta key is down (the Command key on a Mac, or Windows key on Windows)
+* `@alt` - true if the Alt key is down
+* `@shift` - true if the Shift key is down or `shift_lock` is set
+* `@ctrl` - true if the Control key is down
+* `@down_keys` - an `Array` of `Symbol`s of keys that are down excluding the special keys above
+* `@text_keys` - an `Array` of printable characters that has been typed this tick
+
+### Example: filtering
+
+``` ruby
+class FilenameInput < Input::Text
+  ALLOWED_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-', '.']
+
+  def handle_keyboard
+    @text_keys.select! { |key| ALLOWED_CHARS.include?(key) }
+
+    super
+  end
+end
+```
+
 ## Console replacement
 
 This library includes the ability to replace the default DragonRuby Console (`~`). Simply call `Input.replace_console!` once to enable this.

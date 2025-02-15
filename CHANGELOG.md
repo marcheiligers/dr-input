@@ -1,3 +1,8 @@
+# v0.0.23 - 16 February 2025
+
+* Made `@text_keys` instance variable instead of local
+* Wrote up notes on special keyboard handling with filtering example
+
 # v0.0.22 - 9 February 2025
 
 * Fixed a bug when using `max_length` where `selection_end` (and `selection_start`) where incorrectly set (thanks to @TheCire for reporting in Discord).

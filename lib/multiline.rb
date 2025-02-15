@@ -65,7 +65,6 @@ module Input
     end
 
     def handle_keyboard
-      text_keys = $args.inputs.text
       # On a Mac:
       # Home is Cmd + ↑ / Fn + ←
       # End is Cmd + ↓ / Fn + →
@@ -103,7 +102,7 @@ module Input
         else
           @on_unhandled_key.call(@down_keys.first, self)
         end
-      elsif text_keys.empty?
+      elsif @text_keys.empty?
         if @down_keys.include?(:delete)
           delete_forward unless @readonly
           @ensure_cursor_visible = true
@@ -164,7 +163,7 @@ module Input
           @on_unhandled_key.call(@down_keys.first, self)
         end
       else
-        insert(text_keys.join('')) unless @readonly
+        insert(@text_keys.join('')) unless @readonly
         @ensure_cursor_visible = true
       end
     end
