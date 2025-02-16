@@ -302,7 +302,7 @@ module Input
         @selection_end = index
         @mouse_down = false if mouse.up
       else # clicking
-        @on_clicked.call(mouse, self)
+        @on_click.call(mouse, self)
         return unless (@focussed || @will_focus) && mouse.button_left
 
         if @shift
