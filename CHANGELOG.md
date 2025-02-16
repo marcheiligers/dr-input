@@ -1,4 +1,4 @@
-# v0.0.23 - 16 February 2025
+# v0.0.23 - 17 February 2025
 
 * Exposed `@text_keys` as an instance variable instead of a local.
 * Wrote up notes on custom keyboard handling with a filtering example.

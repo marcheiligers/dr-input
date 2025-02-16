@@ -85,7 +85,7 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `focused` - Alias for `focussed`
 * `on_clicked` - Deprecated - use `on_click`
 * `on_click` - on click callback, receives 2 parameters, the click and the `Input` control instance, default `NOOP`
-* `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
+* `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]` as symbols, so `:tab` and `:enter`
 * `max_length` - maximum allowed length (Integer), default `false` which disables length checks
 * `fill_from_bottom` - fill the text from the bottom, like for a log or game terminal, default `false`
 * `draw_autocomplete_menu` - if the input draws the autocomplete menu automatically, default `true`

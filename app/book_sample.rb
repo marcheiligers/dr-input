@@ -44,7 +44,7 @@ def tick(args)
           args.state.multiline.focus
         end
       end,
-      on_clicked: lambda do |_mouse, input|
+      on_click: lambda do |_mouse, input|
         input.focus
         args.state.multiline.blur
       end,
@@ -70,7 +70,7 @@ def tick(args)
           args.state.text.focus
         end
       end,
-      on_clicked: lambda do |_mouse, input|
+      on_click: lambda do |_mouse, input|
         input.focus
         args.state.text.blur
       end

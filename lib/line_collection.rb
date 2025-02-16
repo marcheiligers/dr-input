@@ -233,7 +233,6 @@ module Input
 
             # break up long words
             w = @font_style.string_width(word.rstrip)
-            # TODO: make this a binary search
             while w > width
               r = word.length - 1
               l = 0
