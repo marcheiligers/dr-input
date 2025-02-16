@@ -73,7 +73,7 @@ module Input
       @focussed = params[:focussed] || params[:focused] || false
       @will_focus = false # Get the focus at the end of the tick
 
-      @on_clicked = params[:on_clicked] || NOOP
+      @on_click = params[:on_click] || params[:on_clicked] || NOOP
       # @on_handled_key = params[:on_handled_key] || NOOP
       @on_unhandled_key = params[:on_unhandled_key] || NOOP
 

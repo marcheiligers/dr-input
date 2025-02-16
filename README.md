@@ -82,8 +82,10 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `word_wrap` - if the control should wrap (Boolean), default false
 * `readonly` - initial input read only state (Boolean), default false
 * `focussed` - initial input focus (Boolean), default false
-* `on_clicked` - on click callback, receives 2 parameters, the click and the `Input` control instance, default NOOP
-* `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]`
+* `focused` - Alias for `focussed`
+* `on_clicked` - Deprecated - use `on_click`
+* `on_click` - on click callback, receives 2 parameters, the click and the `Input` control instance, default `NOOP`
+* `on_unhandled_key` - on unhandle key pressed callback, receives 2 parameters, the key and the `Input` control instance, default NOOP. This callback receives keys like `[tab]` and `[enter]` as symbols, so `:tab` and `:enter`
 * `max_length` - maximum allowed length (Integer), default `false` which disables length checks
 * `fill_from_bottom` - fill the text from the bottom, like for a log or game terminal, default `false`
 * `draw_autocomplete_menu` - if the input draws the autocomplete menu automatically, default `true`
@@ -112,6 +114,9 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#replace(text)` - Alias for `#insert(text)`
 * `#replace_at(text, start, end = start)` - Alias for `#insert_at(text, start, end = start)`
 * `#append(text)` - Appends text the end of the value, without changing the selection
+* `#delete_forward` - Deletes selection or the character to the right of the cursor location if the selection is empty (typically in response to the `Delete` key)
+* `#delete_back` - Deletes selection or the character to the left of the cursor location if the selection is empty (typically in response to the `Backspace` key)
+* `#current_selection` - Returns the currently selected text
 * `#current_selection` - Returns the currently selected text
 * `#current_line` - Returns the currently selected line object
 * `#current_word` - Returns the word currently under the cursor
@@ -146,7 +151,33 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#focus` - Focusses the instance. Note the instance will only receive the focus after it's rendered. This prevents multiple instances from handling the keyboard and mouse events in the same tick.
 * `#blur` - Removes the focus from the instance. This happens immediately and the instance will not process keyboard and some mouse events after being blurred.
 * `#focussed?` - Returns true if the input is focussed, false otherwise
+* `#focused?` - Alias for `#focussed?`
 * `#value_changed?` - Returns true if the input value changed in the last tick, false otherwise
+
+## Custom keyboard handling
+
+There may be cases where you want to do some custom keyboard handling, like filtering out certain characters. In order to do this, create a subclass of `Input::Text` or `Input::Multiline` and override the `handle_keyboard` method, calling `super` when your special handling is done. The following instance variables are available:
+
+* `@meta` - true if the Meta key is down (the Command key on a Mac, or Windows key on Windows)
+* `@alt` - true if the Alt key is down
+* `@shift` - true if the Shift key is down or `shift_lock` is set
+* `@ctrl` - true if the Control key is down
+* `@down_keys` - an `Array` of `Symbol`s of keys that are down excluding the special keys above
+* `@text_keys` - an `Array` of printable characters that has been typed this tick
+
+### Example: filtering
+
+``` ruby
+class FilenameInput < Input::Text
+  ALLOWED_CHARS = ('a'..'z').to_a + ('A'..'Z').to_a + ('0'..'9').to_a + ['_', '-', '.']
+
+  def handle_keyboard
+    @text_keys.select! { |key| ALLOWED_CHARS.include?(key) }
+
+    super
+  end
+end
+```
 
 ## Console replacement
 

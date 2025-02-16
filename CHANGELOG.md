@@ -1,3 +1,11 @@
+# v0.0.23 - 17 February 2025
+
+* Exposed `@text_keys` as an instance variable instead of a local.
+* Wrote up notes on custom keyboard handling with a filtering example.
+* Documented `#delete_forward` and `#delete_back` methods.
+* Deprecated `on_clicked` and added `on_click` in it's place.
+* Documented `focused` argument and `#focused?` aliases for `focussed` and `#focussed?`
+
 # v0.0.22 - 9 February 2025
 
 * Fixed a bug when using `max_length` where `selection_end` (and `selection_start`) where incorrectly set (thanks to @TheCire for reporting in Discord).

@@ -31,6 +31,8 @@ module Input
       @alt = (special_keys & ALT_KEYS).any?
       @shift = @shift_lock || (special_keys & SHIFT_KEYS).any?
       @ctrl = (special_keys & CTRL_KEYS).any?
+
+      @text_keys = $args.inputs.text
     end
   end
 end
