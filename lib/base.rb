@@ -360,7 +360,7 @@ module Input
     end
 
     def delete_back
-      @selection_start -= 1 if @selection_start == @selection_end
+      @selection_start -= 1 if @selection_start == @selection_end && @selection_start > 0
       insert('')
     end
 

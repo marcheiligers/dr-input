@@ -1,3 +1,7 @@
+# v0.0.24 - 9 March 2025
+
+* Fixed a bug that caused `delete_back` to result in negative `selection_start`/`selection_end` for an empty input. (thanks @Artem on Discord for reporting and sending the PR)
+
 # v0.0.23 - 17 February 2025
 
 * Exposed `@text_keys` as an instance variable instead of a local.
