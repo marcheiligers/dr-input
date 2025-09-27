@@ -107,7 +107,7 @@ module Input
                 @cursor_dir = 1
                 0
               elsif @cursor_ticks < CURSOR_FULL_TICKS
-                $args.easing.ease(0, @cursor_ticks, CURSOR_FLASH_TICKS, :quad) * 255
+                Easing.smooth_start(start_at: 0, tick_count: @cursor_ticks, end_at: CURSOR_FLASH_TICKS, power: 2) * 255
               else
                 255
               end
