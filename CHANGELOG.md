@@ -1,3 +1,8 @@
+# v0.0.25 - 26 September 2025
+
+* Fixed a crashing bug when assigning `nil` to an input. (thanks @vinnydiehl on Discord for reporting)
+* Fixed a related bug when initializing the input with a non-string, non-falsey value.
+
 # v0.0.24 - 9 March 2025
 
 * Fixed a bug that caused `delete_back` to result in negative `selection_start`/`selection_end` for an empty input. (thanks @Artem on Discord for reporting and sending the PR)

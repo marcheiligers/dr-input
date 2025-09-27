@@ -435,6 +435,45 @@ def test_menu_calculates_menu_items_to_show_long(args, assert)
   assert.equal! menu.items_to_show(110), [995, 5], "with selected_index: #{menu.selected_index}"
 end
 
+# ---------------------- delete_back ----------------------
+
+def test_delete_back(_args, assert)
+  input = build_text_input('1234567890', 10, 10)
+  input.delete_back
+
+  assert.equal! input.value.to_s, '123456789'
+  assert.equal! input.selection_end, 9
+  assert.equal! input.selection_start, 9
+end
+
+def test_delete_back_empty_value(_args, assert)
+  input = build_text_input('', 0, 0)
+  input.delete_back
+
+  assert.equal! input.value.to_s, ''
+  assert.equal! input.selection_end, 0
+  assert.equal! input.selection_start, 0
+end
+
+# ---------------------- bug fixes -----------------------
+
+def test_assign_text_nil(_args, assert)
+  input = build_text_input('1234567890', 10, 10)
+  input.value = nil
+
+  assert.equal! input.value.to_s, ''
+  assert.equal! input.selection_end, 0
+  assert.equal! input.selection_start, 0
+end
+
+def test_create_with_non_string(_args, assert)
+  input = build_text_input(true)
+
+  assert.equal! input.value.to_s, 'true'
+  assert.equal! input.selection_end, 0
+  assert.equal! input.selection_start, 0
+end
+
 # ---------------------- helper methods ----------------------
 
 def build_text_input(value, selection_start = 0, selection_end = selection_start, **attr)
@@ -514,24 +553,4 @@ def mouse_up
   $args.inputs.mouse.button_left = false
   $args.inputs.mouse.click = nil
   $args.inputs.mouse.up = true
-end
-
-# ---------------------- delete_back ----------------------
-
-def test_delete_back(_args, assert)
-  input = build_text_input('1234567890', 10, 10)
-  input.delete_back
-
-  assert.equal! input.value.to_s, '123456789'
-  assert.equal! input.selection_end, 9
-  assert.equal! input.selection_start, 9
-end
-
-def test_delete_back_empty_value(_args, assert)
-  input = build_text_input('', 0, 0)
-  input.delete_back
-
-  assert.equal! input.value.to_s, ''
-  assert.equal! input.selection_end, 0
-  assert.equal! input.selection_start, 0
 end
