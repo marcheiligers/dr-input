@@ -1,7 +1,7 @@
 module Input
   class Text < Base
     def initialize(**params)
-      @value = TextValue.new(params[:value] || '')
+      @value = TextValue.new(params[:value].to_s)
       super
     end
 

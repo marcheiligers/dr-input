@@ -148,10 +148,11 @@ module Input
     end
 
     def value=(text)
-      text = text[0, @max_length] if @max_length
-      @value.replace(text)
-      @selection_start = @selection_start.lesser(text.length)
-      @selection_end = @selection_end.lesser(text.length)
+      val = text.to_s
+      val = val[0, @max_length] if @max_length
+      @value.replace(val)
+      @selection_start = @selection_start.lesser(val.length)
+      @selection_end = @selection_end.lesser(val.length)
     end
 
     def size_enum
