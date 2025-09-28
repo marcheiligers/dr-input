@@ -6,7 +6,7 @@ The Multiline input is fast enough to edit _Alice's Adventures in Wonderland_ (~
 
 ## Usage
 
-Grab the latest single file release `input.rb` from the [Releases](https://github.com/marcheiligers/dr-input/releases) page and save it in your DragonRuby game folder (I'm assuming in a `lib` directory in the sample below).
+Grab the latest single file release `input.rb` from the [Releases](https://github.com/marcheiligers/dr-input/releases) page and save it in your DragonRuby game folder (I'm assuming in a `lib` directory in the sample below). As of version 0.1.0, you can call `Input.download_update!` on the DragonRuby console to update to the most recent version.
 
 
 ```ruby
@@ -123,9 +123,9 @@ The argument list below will list `prompt_color` but not the individual `prompt_
 * `#find(text)` - Selects the searched for text if found
 * `#find_next` - Selects the next instance of the currently selected text
 * `#find_prev` - Selects the previous instance of the currently selected text
-* `#cut` - Cut selection to `$clipboard`
-* `#copy` - Copy selection to `$clipboard`
-* `#paste` - Paste value in `$clipboard`
+* `#cut` - Cut selection to system clipboard
+* `#copy` - Copy selection to system clipboard
+* `#paste` - Paste value in system clipboard
 * `#move_to_start` - Move to the start of the current line
 * `#move_word_left` - Move the cursor a word to the left
 * `#move_char_left` - Move the cursor a character to the left

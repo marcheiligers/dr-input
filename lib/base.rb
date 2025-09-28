@@ -41,7 +41,7 @@ module Input
 
       @max_length = params[:max_length] || false
 
-      @selection_start = params[:selection_start] || params.fetch(:value, '').length
+      @selection_start = params[:selection_start] || params[:value].to_s.length
       @selection_end = params[:selection_end] || @selection_start
 
       @selection_color = parse_color(params, :selection, dr: 102, dg: 178, db: 255, da: 128)
@@ -107,7 +107,7 @@ module Input
                 @cursor_dir = 1
                 0
               elsif @cursor_ticks < CURSOR_FULL_TICKS
-                $args.easing.ease(0, @cursor_ticks, CURSOR_FLASH_TICKS, :quad) * 255
+                Easing.smooth_start(start_at: 0, tick_count: @cursor_ticks, end_at: CURSOR_FLASH_TICKS, power: 2) * 255
               else
                 255
               end
