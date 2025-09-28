@@ -23,7 +23,9 @@ jobs:
           echo "# Copyright (c) 2024 Marc Heiligers" >> input.rb
           echo "# See https://github.com/marcheiligers/dr-input" >> input.rb
           echo "" >> input.rb
-          grep -v require_relative lib/input.rb >> input.rb
+          echo "module Input; DEVELOPMENT = false; VERSION = '$VERSION'; end" >> input.rb
+          echo "" >> input.rb
+          grep -v -E "(require_relative|DEVELOPMENT)" lib/input.rb >> input.rb
           for file in ${files}
           do
             cat "lib/${file}" >> input.rb

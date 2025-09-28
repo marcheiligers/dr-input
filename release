@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 
 rm input.rb | true
+
+export VERSION=$(head -n1 CHANGELOG.md | gsed -En 's/# v([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+).*/\1/p')
+
 files=$(grep require_relative lib/input.rb | gsed -En "s/require_relative\s+'(\w+\.rb)'/\1/p")
-
-grep -v require_relative lib/input.rb >> input.rb
-
+echo "# dr-input $VERSION" >> input.rb
+echo "# MIT Licensed" >> input.rb
+echo "# Copyright (c) 2024 Marc Heiligers" >> input.rb
+echo "# See https://github.com/marcheiligers/dr-input" >> input.rb
+echo "" >> input.rb
+echo "module Input; DEVELOPMENT = false; VERSION = '$VERSION'; end" >> input.rb
+echo "" >> input.rb
+grep -v -E "(require_relative|DEVELOPMENT)" lib/input.rb >> input.rb
 for file in ${files}
 do
   cat "lib/${file}" >> input.rb

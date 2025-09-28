@@ -1,3 +1,10 @@
+# v0.1.0 - 28 September 2026
+
+* Updated release workflow to use maintained actions.
+* Removed references to $clipboard.
+* Added `Input::DEVELOPMENT` (false in released versions) and `Input::VERSION`.
+* Added `Input.download_update!` which will fetch the most recent version from GitHub.
+
 # v0.0.25 - 26 September 2025
 
 * Fixed a crashing bug when assigning `nil` to an input. (thanks @vinnydiehl on Discord for reporting)
