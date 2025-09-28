@@ -97,4 +97,60 @@ module Input
       @lines = @line_parser.perform_word_wrap(@lines.text, w, 0, 0, font_style)
     end
   end
+
+  class LogValue
+    def initialize(text, word_wrap_chars, crlf_chars, w, font_style:)
+      @w = w
+      @line_parser = LineParser.new(word_wrap_chars, crlf_chars, font_style: font_style)
+      @lines = @line_parser.perform_word_wrap(text, @w)
+    end
+
+    def to_s
+      @lines.text
+    end
+
+    def length
+      @lines.last.end
+    end
+
+    def empty?
+      @lines.last.end == 0
+    end
+
+    def insert(from, to, text) # rubocop:disable Metrics/AbcSize
+      modified_lines = @lines.modified(from, to)
+      original_value = modified_lines.text
+      first_modified_line = modified_lines.first
+      original_index = first_modified_line.start
+      modified_value = original_value[0, from - original_index].to_s + text + original_value[to - original_index, original_value.length].to_s
+      new_lines = @line_parser.perform_word_wrap(modified_value, @w, first_modified_line.number, original_index)
+
+      @lines.replace(modified_lines, new_lines)
+    end
+
+    def index(text)
+      @lines.text.index(text)
+    end
+
+    def rindex(text)
+      @lines.text.rindex(text)
+    end
+
+    def slice(from, length = 1)
+      @lines.text.slice(from, length)
+    end
+    alias [] slice
+
+    def replace(text)
+      @lines = @line_parser.perform_word_wrap(text, @w)
+    end
+
+    def reflow(w, font_style)
+      return if @w == w && @font_style == font_style
+
+      @w = w
+      @font_style = font_style
+      @lines = @line_parser.perform_word_wrap(@lines.text, w, 0, 0, font_style)
+    end
+  end
 end
