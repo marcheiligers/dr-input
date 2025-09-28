@@ -35,7 +35,6 @@ module Input
 
         url = "https://github.com/marcheiligers/dr-input/releases/download/v#{@__input_version}/input.rb"
         @__input_download_response = $gtk.http_get url
-        puts "download: #{@__input_download_response.inspect}"
       elsif instance_variable_defined?(:@__input_download_response) && @__input_download_response[:complete]
         raise "Received status code #{@__input_download_response[:http_response_code]}" unless @__input_download_response[:http_response_code] == 200
 
