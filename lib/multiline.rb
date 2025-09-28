@@ -1,7 +1,7 @@
 module Input
   class Multiline < Base
     def initialize(**params)
-      value = params[:value] || ''
+      value = params[:value].to_s
 
       super
 

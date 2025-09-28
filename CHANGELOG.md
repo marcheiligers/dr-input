@@ -4,6 +4,11 @@
 * Removed references to $clipboard.
 * Added `Input::DEVELOPMENT` (false in released versions) and `Input::VERSION`.
 * Added `Input.download_update!` which will fetch the most recent version from GitHub.
+* Split tests into separate files.
+* Updated cursor easing to remove wanrning and improve performance.
+* Fixed another `nil` initializer bug.
+* Updated book sample to start blank with a button to load Alice.
+
 
 # v0.0.25 - 26 September 2025
 

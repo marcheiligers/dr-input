@@ -6,7 +6,7 @@ The Multiline input is fast enough to edit _Alice's Adventures in Wonderland_ (~
 
 ## Usage
 
-Grab the latest single file release `input.rb` from the [Releases](https://github.com/marcheiligers/dr-input/releases) page and save it in your DragonRuby game folder (I'm assuming in a `lib` directory in the sample below).
+Grab the latest single file release `input.rb` from the [Releases](https://github.com/marcheiligers/dr-input/releases) page and save it in your DragonRuby game folder (I'm assuming in a `lib` directory in the sample below). As of version 0.1.0, you can call `Input.download_update!` on the DragonRuby console to update to the most recent version.
 
 
 ```ruby
