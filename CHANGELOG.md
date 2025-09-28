@@ -1,3 +1,7 @@
+# v0.1.1 - 28 September 2026
+
+* Removed a left over debugging `puts`. (Also allows me to test `Input::DEVELOPMENT`)
+
 # v0.1.0 - 28 September 2026
 
 * Updated release workflow to use maintained actions.
