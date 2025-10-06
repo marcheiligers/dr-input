@@ -200,13 +200,16 @@ module Input
           rt.primitives << { x: left, y: 0, w: right - left, h: @font_height + @padding * 2 }.solid!(sc)
         end
 
-        # TEXT
-        f = find_index_at_x(@scroll_x)
-        l = find_index_at_x(@scroll_x + @content_w) + 2
-        rt.primitives << @font_style.label(x: 0, y: @padding, text: @value[f, l - f], **@text_color)
+        render_text(rt)
       end
 
       draw_cursor(rt)
+    end
+
+    def render_text(rt)
+      f = find_index_at_x(@scroll_x)
+      l = find_index_at_x(@scroll_x + @content_w) + 2
+      rt.primitives << @font_style.label(x: 0, y: @padding, text: @value[f, l - f], **@text_color)
     end
   end
 end
