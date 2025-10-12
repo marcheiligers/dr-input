@@ -3,7 +3,7 @@ module Input
     GTK::Console.prepend(Input::Console)
   end
 
-  class Prompt < Text
+  class Prompt < RubyText
     def render(args, x:, y:)
       @x = x
       @y = y

@@ -2,6 +2,8 @@ require 'lib/parser.rb'
 
 module Input
   class RubyText < Text
+    attr_reader :tokens
+
     DEFAULT_THEME = {
       keyword: { r: 197, g: 134, b: 192 },      # Purple
       string: { r: 152, g: 195, b: 121 },       # Green
@@ -21,17 +23,15 @@ module Input
       custom_theme = params.delete(:theme) || {}
       theme = DEFAULT_THEME.merge(custom_theme)
       @theme = theme.transform_values { |color| color.merge(vertical_alignment_enum: 0) }
-      @cached_value = nil
-      @cached_tokens = nil
+      @tokens = []
       super
     end
 
     def render_text(rt)
-      # Parse only if value has changed
-      if @cached_value != @value.to_s
-        @cached_value = @value.to_s
-        parser = RubyParser.new(@cached_value)
-        @cached_tokens = parser.parse
+      # Parse only if value has changed or tokens are empty
+      if @value_changed || @tokens.empty?
+        parser = RubyParser.new(@value.to_s)
+        @tokens = parser.parse
       end
 
       # Find visible range
@@ -41,7 +41,7 @@ module Input
       # Calculate character positions and render visible tokens
       char_index = 0
 
-      @cached_tokens.each do |token|
+      @tokens.each do |token|
         token_length = token[:value].length
         token_start = char_index
         token_end = char_index + token_length
@@ -57,7 +57,7 @@ module Input
           color = @theme[token[:type]] || @text_color
 
           # Calculate x position for this token
-          token_x_offset = @font_style.string_width(@cached_value[f, visible_start - f].to_s) if visible_start > f
+          token_x_offset = @font_style.string_width(@value[f, visible_start - f].to_s) if visible_start > f
 
           rt.primitives << @font_style.label(
             x: token_x_offset || 0,

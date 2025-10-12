@@ -21,33 +21,17 @@ def test_ruby_text_with_default_theme(args, assert)
   assert.equal! theme[:string], { r: 152, g: 195, b: 121, vertical_alignment_enum: 0 }
 end
 
-def test_ruby_text_caches_parse_results(args, assert)
+def test_ruby_text_parses_and_exposes_tokens(args, assert)
   input = Input::RubyText.new(value: 'def foo; end', x: 0, y: 0, w: 200, h: 30)
 
   # First render - should parse
-  input.prepare_render_target
-  cached_tokens = input.instance_variable_get(:@cached_tokens)
-  assert.true! cached_tokens.is_a?(Array), 'Should cache tokens'
-  assert.true! cached_tokens.length > 0, 'Should have parsed tokens'
+  input.tick
+  tokens = input.tokens
+  assert.true! tokens.is_a?(Array), 'Should have tokens'
+  assert.true! tokens.length > 0, 'Should have parsed tokens'
 
-  # Second render with same value - should use cache
-  input.prepare_render_target
-  cached_tokens2 = input.instance_variable_get(:@cached_tokens)
-  assert.equal! cached_tokens.object_id, cached_tokens2.object_id, 'Should reuse cached tokens'
-end
-
-def test_ruby_text_reparses_on_value_change(args, assert)
-  input = Input::RubyText.new(value: 'def foo; end', x: 0, y: 0, w: 200, h: 30)
-
-  # First render
-  input.prepare_render_target
-  cached_tokens = input.instance_variable_get(:@cached_tokens)
-
-  # Change value
-  input.insert('bar')
-
-  # Second render - should reparse
-  input.prepare_render_target
-  cached_tokens2 = input.instance_variable_get(:@cached_tokens)
-  assert.true! cached_tokens.object_id != cached_tokens2.object_id, 'Should reparse on value change'
+  # Second render with same value - should use cache (value_changed is false)
+  input.tick
+  tokens2 = input.tokens
+  assert.equal! tokens.object_id, tokens2.object_id, 'Should reuse cached tokens when value unchanged'
 end

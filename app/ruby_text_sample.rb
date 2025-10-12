@@ -8,9 +8,8 @@ def tick(args)
 
     args.state.ruby_input = Input::RubyText.new(
       x: 40,
-      y: 600,
+      y: 560,
       w: 1200,
-      h: 60,
       padding: 10,
       prompt: 'Enter Ruby code...',
       value: args.state.ruby_code,
@@ -50,10 +49,36 @@ def tick(args)
   args.state.ruby_input.tick
   args.outputs.primitives << args.state.ruby_input
 
-  # Info text
+  # Token statistics
+  y = 540
   args.outputs.labels << {
     x: 40,
-    y: 560,
+    y: y,
+    text: 'Token Breakdown:',
+    size_px: 16,
+    r: 200, g: 200, b: 200
+  }
+
+  y -= 25
+  token_types = args.state.ruby_input.tokens.map { |t| t[:type] }.uniq
+  token_types.each do |type|
+    count = args.state.ruby_input.tokens.count { |t| t[:type] == type }
+
+    args.outputs.labels << {
+      x: 40,
+      y: y,
+      text: "#{type}: #{count}",
+      size_px: 12,
+      r: 150, g: 150, b: 150
+    }
+    y -= 20
+  end
+
+  # Info text
+  bottom_y = 100
+  args.outputs.labels << {
+    x: 40,
+    y: bottom_y + 20,
     text: "Input supports: keywords, strings, symbols, numbers, constants, comments, interpolation, and more!",
     size_px: 14,
     r: 150, g: 150, b: 150
@@ -62,7 +87,7 @@ def tick(args)
   # Example code suggestions
   args.outputs.labels << {
     x: 40,
-    y: 520,
+    y: bottom_y,
     text: 'Try typing: def foo(bar) @baz = "hello #{bar}" end',
     size_px: 12,
     r: 120, g: 120, b: 120

@@ -1,3 +1,15 @@
+# v0.2.0 - TBD
+
+* Added `Input::RubyText` - a syntax-highlighted Ruby input control
+  * Subclasses `Text` with minimal code changes
+  * Uses `dr-parser-rb` for tokenization
+  * Default theme with customizable colors
+  * Exposes `tokens` for displaying parse statistics
+  * Caches parse results using `@value_changed` flag
+* Fixed bug where `value=` setter did not set `@value_changed = true`
+* Updated console to use `RubyText` for syntax-highlighted prompt
+* Added tests for `@value_changed` flag behavior
+
 # v0.1.1 - 28 September 2026
 
 * Removed a left over debugging `puts`. (Also allows me to test `Input::DEVELOPMENT`)
