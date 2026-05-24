@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -e
+
+PARSER_DIR="../dr-parser-rb"
+TARGET_DIR="./lib"
+
+echo "Building latest parser in $PARSER_DIR..."
+cd "$PARSER_DIR"
+./release
+
+echo "Copying parser.rb to $TARGET_DIR..."
+cd -
+cp "$PARSER_DIR/parser.rb" "$TARGET_DIR/parser.rb"
+
+echo "Parser updated successfully!"

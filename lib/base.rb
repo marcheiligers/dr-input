@@ -153,6 +153,7 @@ module Input
       @value.replace(val)
       @selection_start = @selection_start.lesser(val.length)
       @selection_end = @selection_end.lesser(val.length)
+      @value_changed = true
     end
 
     def size_enum

@@ -2,3 +2,4 @@
 require 'app/book_sample.rb'
 # require 'app/log_sample.rb'
 # require 'app/menu_sample.rb'
+# require 'app/ruby_text_sample.rb'

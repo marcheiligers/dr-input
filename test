@@ -1,2 +1,19 @@
 cd ..
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby dr-input --test tests/tests.rb --no-tick
+
+# Use provided test file or default to all tests
+TEST_FILE=${1:-tests/tests.rb}
+
+# If a specific test file is provided, ensure it has the .rb extension and is in tests/ directory
+if [ "$1" ]; then
+  # If the file doesn't start with tests/, add it
+  if [[ "$TEST_FILE" != tests/* ]]; then
+    TEST_FILE="tests/$TEST_FILE"
+  fi
+  
+  # If the file doesn't end with .rb, add it
+  if [[ "$TEST_FILE" != *.rb ]]; then
+    TEST_FILE="$TEST_FILE.rb"
+  fi
+fi
+
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ./dragonruby dr-input --test "$TEST_FILE" --no-tick
