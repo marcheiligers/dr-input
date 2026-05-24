@@ -53,7 +53,11 @@ module Input
         # is the cursor before the period?
         if @autocomplete_period_index && @autocomplete_period_index >= @prompt.selection_end
           autocomplete_clear
-        elsif @prompt.value_changed? || @prompt.selection_end != @autocomplete_selection_end
+        elsif @prompt.value_changed?
+          # User typed - just update the filter, don't modify their input
+          autocomplete_prefix
+        elsif @prompt.selection_end != @autocomplete_selection_end
+          # Cursor moved (arrow keys) - update suggestion
           autocomplete_prefix
           autocomplete_next(0)
         end
@@ -151,9 +155,11 @@ module Input
 
       autocomplete_prefix
       autocomplete_next(0)
+      @autocomplete_selection_end = @prompt.selection_end  # Track the selection we just set
+      @prompt.instance_variable_set(:@value_changed, false)  # Reset flag so next tick doesn't think user typed
     rescue Exception => e
-      puts "* BUG: Tab autocompletion failed. Let us know about this.\n#{e}"
-      puts e.backtrace
+      puts "* BUG: Tab autocompletion failed: #{e.class.name}: #{e.message}"
+      puts e.backtrace.join("\n")
     end
 
     def autocomplete_prefix
@@ -174,10 +180,20 @@ module Input
 
     def autocomplete_next(dir)
       return unless @autocompleting
+      return if @autocomplete_menu.items.empty?
 
       @autocomplete_menu.selected_index -= dir
-      @prompt.value = display_autocomplete_candidate(@autocomplete_menu.value)
-      @prompt.selection_start = @prompt.value.length
+      candidate_value = @autocomplete_menu.value
+      return unless candidate_value
+
+      candidate = display_autocomplete_candidate(candidate_value)
+      @prompt.value = candidate
+      # Set selection to highlight the autocompleted suffix
+      selection_pos = @autocomplete_period_index ? @autocomplete_period_index + 1 + @autocomplete_prefix.length : @autocomplete_prefix.length
+      @prompt.selection_start = selection_pos
+      @prompt.selection_end = candidate.length
+      @autocomplete_selection_end = @prompt.selection_end  # Track the selection we just set
+      @prompt.instance_variable_set(:@value_changed, false)  # Reset flag so next tick doesn't think user typed
     rescue => e
       puts "Error in #autocomplete_next(#{dir}): <#{e.class.name}> #{e.message}"
     end
